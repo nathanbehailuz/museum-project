@@ -1,23 +1,32 @@
 # Implementation Plan: Museum Exhibition Maker
 
-Status: Draft
-Related documents: [Project brief](PROJECT_BRIEF.md), [PRD](prd.md)
+Status: Phase 1 complete — ready for Phase 2
+Related documents: [Project brief](PROJECT_BRIEF.md), [PRD](prd.md), [Content audit](content-audit.md)
 
 This document is the build order and phase gate list. The PRD stays the product contract: what must be true. Do not copy task lists back into the PRD.
 
 A phase is done only when its test cases pass. Do not start the next phase's product work until then. Record results and gaps in the root `BUILD_LOG.md` after every meaningful change, not only at phase end.
 
-## Open Decisions
+## Locked Decisions (Phase 1)
 
-Resolve these in phase 1 before writing feature code:
-
-- Default subject after a live content audit.
-- Verified artwork IDs for that subject's launch pool (at least six).
-- Cache mechanism and TTL on the chosen deployment runtime.
-- Upstream timeout, retry budget, and total request deadline.
-- Motion approach for artwork inspection (FLIP/shared-element library vs. CSS).
-
-Record the answers in this document and the root `BUILD_LOG.md`. Update the PRD only if verified API behavior changes scope or acceptance criteria.
+| Decision | Choice |
+| --- | --- |
+| Museum API | [The Met Collection API](https://metmuseum.github.io/) — no registration, no API key |
+| Upstream base | `https://collectionapi.metmuseum.org` |
+| Search | `GET /public/collection/v1.1/search` with `offset`/`limit` (`/v1/search` retires 1 Oct 2026) |
+| Object | `GET /public/collection/v1/objects/{objectID}` |
+| Images | Use `primaryImageSmall` (gallery) and `primaryImage` (inspect) from the object record; host `images.metmuseum.org` |
+| Eligibility | `isPublicDomain === true` and non-empty `primaryImage`. Search `hasImages=true` is not sufficient. |
+| Default subject | `windows` / title `Windows` |
+| Launch pool | See [`data/subjects.json`](../data/subjects.json) — 9 reviewed IDs; default exhibition `[9817, 14808, 453573]` |
+| App routes | `GET /api/exhibitions?subject=`, `GET /api/artworks?ids=`, `GET /api/replacements?subject=&exclude=` |
+| Deploy | Vercel |
+| Cache | Successful normalized metadata only; 1-hour TTL via Next.js/`fetch` cache on Vercel; never cache failures as success |
+| Upstream resilience | ~8s total deadline; at most two retries on network/429/5xx; backoff; honor Retry-After within deadline; no retry on permanent 4xx |
+| Motion | CSS transform/opacity FLIP or View Transitions; no extra library unless Phase 4 needs it; honor `prefers-reduced-motion` |
+| Env vars | None required for the museum API |
+| Normalized artwork shape | `id`, `title`, `artist`, `date`, `medium`, `image` (`primary` + `small`), `isPublicDomain`, `objectURL` — mapped from Met `objectID`, `title`, `artistDisplayName`, `objectDate`, `medium`, `primaryImage`/`primaryImageSmall`, `isPublicDomain`, `objectURL` |
+| Request courtesy | Optional identifying `User-Agent`; Met documents up to 80 req/s; still bound our own timeout/retry |
 
 ## Proposed Route Contracts
 
@@ -29,28 +38,30 @@ Names can change; document the implemented contracts in the README.
 | `GET /api/artworks?ids=` | Normalized records for up to three reviewed IDs. |
 | `GET /api/replacements?subject=&exclude=` | One eligible replacement not in the current selection. |
 
-UI components call these routes, not the museum API. Image requests may go directly to the approved museum image host.
+UI components call these routes, not the museum API. Image requests may go directly to `images.metmuseum.org`.
 
 ## Phase 1. Confirm Scope And Content
 
 **Exit:** One default subject is verified, the launch pool is recorded, and this plan's open decisions are filled in.
 
+**Status:** Complete. Tests P1-1–P1-4 passed. See [content-audit.md](content-audit.md) and root `BUILD_LOG.md`.
+
 ### Build, in order
 
-1. Live-audit candidate subjects (windows, chairs, bowls, hands) against the Art Institute API.
+1. Live-audit candidate subjects (windows, chairs, bowls, hands) against The Met API.
 2. Choose the default subject and at least six visually relevant, public-domain, image-backed IDs.
 3. Settle route contracts, cache, timeout/retry, and motion approach.
-4. Scaffold the app only as far as needed to start the log and config (subjects, ID pools).
+4. Write subject/ID config the backend can consume (`data/subjects.json`). No Next.js scaffold in this phase.
 5. Keep the root `BUILD_LOG.md` current: goal, scope, stack, tool choices, and session notes.
 
 ### Test cases to pass
 
-| ID | Check | How |
-| --- | --- | --- |
-| P1-1 | Default subject has at least six distinct eligible IDs. | Live API audit |
-| P1-2 | Every launch ID is public domain and has a usable image ID. | Live fetch of each ID |
-| P1-3 | Each launch work visually shows the subject; title-only matches are rejected. | Manual image review |
-| P1-4 | Open decisions above are recorded with the chosen values. | This doc + build log |
+| ID | Check | How | Result |
+| --- | --- | --- | --- |
+| P1-1 | Default subject has at least six distinct eligible IDs. | Live API audit | Pass — 9 windows IDs |
+| P1-2 | Every launch ID is public domain and has a usable primary image. | Live fetch of each ID | Pass |
+| P1-3 | Each launch work visually shows the subject; title-only matches are rejected. | Manual image review | Pass |
+| P1-4 | Open decisions above are recorded with the chosen values. | This doc + build log | Pass |
 
 ## Phase 2. Vertical Slice And First Deploy
 
@@ -73,7 +84,7 @@ UI components call these routes, not the museum API. Image requests may go direc
 | P2-2 | Each work shows an uncropped image, title, artist, and date; missing optional metadata uses a fallback, never invented facts. | F03 | Browser |
 | P2-3 | Initial fetch shows artwork-shaped skeletons and an accessible loading status. | F01, N04, states | Browser |
 | P2-4 | Unsupported subjects and malformed IDs are rejected by the route with no upstream call. | B01 | Automated |
-| P2-5 | Records that are not explicitly public domain or lack an image ID never enter the exhibition. | B02 | Automated + live sample |
+| P2-5 | Records that are not explicitly public domain or lack a primary image never enter the exhibition. | B02 | Automated + live sample |
 | P2-6 | Normalized payload contains only the fields the UI needs; optional fields may be absent. | B03 | Automated |
 | P2-7 | Upstream timeout/outage shows a recoverable error with retry; no crash. | B06, states | Automated mock + live if needed |
 | P2-8 | A pool with fewer than three usable works shows a clear empty/insufficient state. | B02, states | Automated or fixture |
@@ -126,7 +137,7 @@ UI components call these routes, not the museum API. Image requests may go direc
 2. Keyboard-only main journey, named controls, visible focus, status messages.
 3. Reduced-motion path, then the inspection transition (transform/opacity).
 4. Image sizing and layout stability during replacement.
-5. Additional subjects only if each has six eligible, visually relevant works.
+5. Additional subjects only if each has six eligible, visually relevant works. Chairs and bowls looked strong in the Phase 1 sample; hands needs more IDs.
 6. Production Lighthouse mobile run; note score and limitations.
 
 ### Test cases to pass

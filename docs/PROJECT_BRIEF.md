@@ -86,22 +86,21 @@ The primary visit should take only a few minutes and produce something worth sha
 
 ## Data Source
 
-Use the [Art Institute of Chicago API](https://api.artic.edu/docs/) as the initial data source.
+Use [The Met Collection API](https://metmuseum.github.io/) as the data source. No registration or API key is required. Prefer `/public/collection/v1.1/search` (paginated); `/v1/search` retires on 1 October 2026. Object records come from `/public/collection/v1/objects/{objectID}` and include JPEG URLs when open access.
 
-The API supports collection metadata, search, and IIIF image delivery. The app should fetch only the fields it needs:
+The app should normalize only the fields it needs:
 
-- Artwork ID.
+- Object ID.
 - Title.
-- Artist display.
-- Date display.
-- Medium display.
-- Image ID.
-- Public-domain status.
-- Artwork type or subject metadata where useful.
-- Original museum record URL.
-- Optional museum description, sanitized if rendered.
+- Artist display name.
+- Object date.
+- Medium.
+- Primary image URLs (`primaryImage`, `primaryImageSmall`).
+- Public-domain status (`isPublicDomain`).
+- Object URL on metmuseum.org.
+- Optional tags or classification where useful.
 
-The initial release should combine a small manually reviewed pool of artwork IDs with live API-fetched metadata. This is important because a search term like `window` may match a title or catalog text without actually showing a visually relevant window. The reviewed pool is an editorial selection layer, not fabricated data.
+The initial release combines a small manually reviewed pool of object IDs with live API-fetched metadata. This is important because a search term like `window` may match a title or tag without showing a visually relevant window, and `hasImages=true` does not guarantee an open-access JPEG. The reviewed pool is an editorial selection layer, not fabricated data. Launch config lives in `data/subjects.json`.
 
 ## Backend Approach
 
@@ -110,8 +109,8 @@ Use Next.js route handlers as a backend-for-frontend. The frontend should call t
 The backend should:
 
 - Validate supported subjects, artwork IDs, title lengths, and request limits.
-- Fetch artwork metadata from the Art Institute API.
-- Filter out records with missing images or unsuitable rights status.
+- Fetch artwork metadata from The Met Collection API.
+- Filter out records that are not public domain or lack a usable `primaryImage`.
 - Normalize upstream records into a small frontend-friendly artwork shape.
 - Exclude current selections when finding replacements.
 - Cache normalized artwork metadata and subject pools with a documented expiry.

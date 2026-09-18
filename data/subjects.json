@@ -1,0 +1,95 @@
+{
+  "defaultSubject": "windows",
+  "subjects": [
+    {
+      "slug": "windows",
+      "defaultTitle": "Windows",
+      "published": true,
+      "defaultArtworkIds": [9817, 14808, 453573],
+      "artworkIds": [9817, 14808, 453573, 5497, 14807, 5496, 444829, 444826, 436896],
+      "notes": "Launch subject. Reviewed against Met Collection API: isPublicDomain + primaryImage + visual window relevance."
+    }
+  ],
+  "artworkNotes": {
+    "9817": {
+      "title": "Stained-glass window",
+      "artist": "Evert Duyckinck",
+      "date": "ca. 1656",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/9817",
+      "visualReview": "Heraldic leaded window panel; clearly a window."
+    },
+    "14808": {
+      "title": "Stained Glass Window",
+      "artist": "William Lightfoot Price",
+      "date": "ca. 1905",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/14808",
+      "visualReview": "Leaded glass in an oak sash; clearly a window."
+    },
+    "453573": {
+      "title": "Window",
+      "artist": "",
+      "date": "17th century",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/453573",
+      "visualReview": "Pierced gypsum window screen (jali); clearly a window."
+    },
+    "5497": {
+      "title": "Stained Glass",
+      "artist": "John La Farge",
+      "date": "ca. 1881–82",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/5497",
+      "visualReview": "Leaded opalescent glass panel; window glazing."
+    },
+    "14807": {
+      "title": "Stained Glass Window",
+      "artist": "William Lightfoot Price",
+      "date": "ca. 1905",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/14807",
+      "visualReview": "Companion leaded sash window to 14808."
+    },
+    "5496": {
+      "title": "Stained Glass Panel",
+      "artist": "Otto Heinigke",
+      "date": "ca. 1900–1910",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/5496",
+      "visualReview": "Stained glass panel; window glazing."
+    },
+    "444829": {
+      "title": "Window",
+      "artist": "",
+      "date": "18th century",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/444829",
+      "visualReview": "Islamic pierced window screen with floral motif."
+    },
+    "444826": {
+      "title": "Window",
+      "artist": "",
+      "date": "18th century",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/444826",
+      "visualReview": "Islamic pierced window screen; clearly a window."
+    },
+    "436896": {
+      "title": "Portrait of a Woman with a Man at a Casement",
+      "artist": "Fra Filippo Lippi",
+      "date": "ca. 1440",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/436896",
+      "visualReview": "Painting where a casement window is a primary compositional element."
+    }
+  },
+  "rejectedDuringAudit": [
+    {
+      "id": 16967,
+      "subjectAttempt": "windows",
+      "reason": "Tiffany-era design drawing; not public domain and no primaryImage."
+    },
+    {
+      "id": 1457,
+      "subjectAttempt": "windows",
+      "reason": "Listed as casement window but primary image did not clearly show a window; excluded."
+    },
+    {
+      "id": 467916,
+      "subjectAttempt": "windows",
+      "reason": "Stained-glass fragment centered on a figure; weak as an everyday-window subject."
+    }
+  ]
+}

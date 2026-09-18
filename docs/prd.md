@@ -2,7 +2,7 @@
 
 Status: Draft for implementation
 Assignment: Creative, API-Integrated Web App
-Related documents: [Project brief](PROJECT_BRIEF.md), [Implementation plan](IMPLEMENTATION_PLAN.md)
+Related documents: [Project brief](PROJECT_BRIEF.md), [Implementation plan](IMPLEMENTATION_PLAN.md), [Content audit](content-audit.md)
 Implementation budget: 2-4 hours, within the assessment's 6-10 hour total
 
 ## 1. Product Goal
@@ -15,7 +15,7 @@ The first screen is the usable exhibition. A visitor should be able to create an
 
 All requirements in section 4 are release requirements. Deliver a small, complete experience before expanding the number of subjects or adding optional features.
 
-Launch with one verified subject first. Expand to at most four subjects only when each has enough visually relevant, public-domain works with usable images. Windows, chairs, bowls, and hands are candidates, not confirmed launch content.
+Launch with one verified subject first (`windows`). Expand to at most four subjects only when each has enough visually relevant, public-domain works with usable images. Chairs, bowls, and hands remain candidates for later phases, not confirmed launch content.
 
 Optional after release requirements pass: zoom, drag-and-drop ordering, editorial prompts, downloadable exhibition images, and search.
 
@@ -50,15 +50,15 @@ Out of scope: accounts, database storage, private collections, multiple museums,
 
 ## 5. API And Backend Requirements
 
-Use the Art Institute of Chicago API for live metadata and its image delivery service for artwork images. Maintain small, manually reviewed ID pools to establish visual relevance. Reviewed IDs are editorial configuration, not a substitute for live API integration.
+Use [The Met Collection API](https://metmuseum.github.io/) for live metadata and JPEG image URLs (`primaryImage` / `primaryImageSmall`). No API key is required. Maintain small, manually reviewed ID pools to establish visual relevance. Reviewed IDs are editorial configuration, not a substitute for live API integration.
 
-Use Next.js route handlers as a backend-for-frontend. UI components request normalized data from the application's routes. Image requests may go directly to the approved museum image host.
+Use Next.js route handlers as a backend-for-frontend. UI components request normalized data from the application's routes. Image requests may go directly to `images.metmuseum.org`.
 
 
 | ID  | Requirement         | Acceptance criteria                                                                                                                                                                                                                                       |
 | --- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | B01 | Validation          | Server routes accept only supported subjects and positive integer IDs from the reviewed subject pools. Bound list sizes, title length where accepted, and request parameters. Invalid requests return a consistent client error without an upstream call. |
-| B02 | Eligibility         | Only records explicitly marked public domain with a usable image ID enter an exhibition. Missing or uncertain eligibility is excluded. A pool with fewer than three usable works produces a clear insufficient-content state.                             |
+| B02 | Eligibility         | Only records with `isPublicDomain === true` and a non-empty `primaryImage` enter an exhibition. Missing or uncertain eligibility is excluded. A pool with fewer than three usable works produces a clear insufficient-content state.                      |
 | B03 | Normalization       | Return only the fields the UI needs: ID, title, artist, date, medium, image information, rights status, and museum record URL. Optional fields may be absent without breaking rendering.                                                                  |
 | B04 | Cache               | Cache successful normalized metadata for a proposed 1-hour TTL using a mechanism supported by the deployment runtime. Document the actual TTL, invalidation, and cache boundaries. Do not cache failures as successful data.                              |
 | B05 | Upstream resilience | Apply a bounded timeout and at most two retries for transient network failures, 429, and 5xx responses. Use backoff, honor Retry-After within the total request deadline, and stop when that deadline is exhausted. Do not retry permanent 4xx responses. |
@@ -121,7 +121,7 @@ Build order and per-phase test cases live in the [implementation plan](IMPLEMENT
 
 | Phase | Exit criterion |
 | --- | --- |
-| 1. Confirm scope and content | One default subject and at least six eligible works are verified. Open technical decisions in the implementation plan are recorded. BUILD_LOG.md is started. |
+| 1. Confirm scope and content | Complete. Default subject `windows` with nine eligible Met IDs; technical decisions recorded; BUILD_LOG.md current. |
 | 2. Build and deploy a vertical slice | One subject renders three live works through the backend, with responsive layout, loading, and recoverable error behavior. The live URL shows real metadata and images. |
 | 3. Complete curation and sharing | Replace, reorder, title, inspect, and reconstruct a shared URL. Backend cache/retry behavior is verified. Preview deployment is updated. |
 | 4. Polish and verify | Required states, keyboard/focus behavior, reduced motion, signature transition, and production performance checks are done. Extra subjects only if the core is complete. |
@@ -148,19 +148,21 @@ Manually check malformed URLs, unavailable records, empty pools, upstream failur
 - Root README.md with features, local setup from zero, API choice/quirks, architecture and caching, advanced feature explanation, testing results, and limitations.
 - Root BUILD_LOG.md, maintained during each phase, covering goal/scope, stack and AI tools, decisions and alternatives, hard parts, verification, limitations, and time spent.
 - Root .env.example containing placeholders only, or an explicit statement that no environment variables are required.
-- docs/PROJECT_BRIEF.md, this PRD, and docs/IMPLEMENTATION_PLAN.md.
+- docs/PROJECT_BRIEF.md, this PRD, docs/IMPLEMENTATION_PLAN.md, and docs/content-audit.md.
+- data/subjects.json with the reviewed launch subject and artwork IDs.
 - Optional but recommended video demonstrating the product and explaining one proud implementation detail and one challenge or shortcut.
 - A shared final submission document collecting live, repo, and video links for all three separate projects.
 
 Release only after the main journey works on the deployed site, the backend advanced feature has evidence, required states have been checked, and the documentation reflects the actual implementation. If the time box ends first, submit an honest account of completed scope, gaps, and next steps rather than claiming unchecked requirements passed. Confirm reviewer access and all links before the assessment's final submission, which locks further changes.
 
-## 12. Decisions To Resolve Before Implementation
+## 12. Decisions Resolved In Phase 1
 
-These are listed with the build sequence in the [implementation plan](IMPLEMENTATION_PLAN.md). Resolve them in phase 1:
+Locked in the [implementation plan](IMPLEMENTATION_PLAN.md), [content audit](content-audit.md), and [`data/subjects.json`](../data/subjects.json):
 
-- Which candidate subject passes the live content audit and becomes the default?
-- Which verified artwork IDs form its launch pool?
-- Which cache mechanism and request deadline fit the chosen deployment runtime?
-- Which motion library or existing transition approach fits the stack and time budget?
+- Default subject: `windows` (title `Windows`).
+- Launch pool: nine Met object IDs; default exhibition `9817`, `14808`, `453573`.
+- Deploy / cache: Vercel; successful metadata cached ~1 hour; failures not cached as success.
+- Upstream: ~8s deadline, at most two retries on transient failures; no API key / no env vars.
+- Motion: CSS transform/opacity FLIP or View Transitions; honor `prefers-reduced-motion`.
 
-Record decisions in the implementation plan and build log. Update this PRD if verified API behavior changes the scope or acceptance criteria.
+Update this PRD if verified API behavior changes the scope or acceptance criteria.
