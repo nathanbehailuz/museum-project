@@ -1,1 +1,43 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Testing / coverage
+coverage
+*.lcov
+
+# Next.js
+.next/
+out/
+build
+dist
+
+# Misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env (none required for Met API; keep local secrets out of git)
+.env
+.env*.local
+
+# Vercel
+.vercel
+
+# Cursor
 .cursor
+
+# TypeScript
+next-env.d.ts

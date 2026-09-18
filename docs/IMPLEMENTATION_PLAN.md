@@ -1,6 +1,6 @@
 # Implementation Plan: Museum Exhibition Maker
 
-Status: Phase 1 complete — ready for Phase 2
+Status: Phase 2 complete — ready for Phase 3
 Related documents: [Project brief](PROJECT_BRIEF.md), [PRD](prd.md), [Content audit](content-audit.md)
 
 This document is the build order and phase gate list. The PRD stays the product contract: what must be true. Do not copy task lists back into the PRD.
@@ -22,7 +22,7 @@ A phase is done only when its test cases pass. Do not start the next phase's pro
 | App routes | `GET /api/exhibitions?subject=`, `GET /api/artworks?ids=`, `GET /api/replacements?subject=&exclude=` |
 | Deploy | Vercel |
 | Cache | Successful normalized metadata only; 1-hour TTL via Next.js/`fetch` cache on Vercel; never cache failures as success |
-| Upstream resilience | ~8s total deadline; at most two retries on network/429/5xx; backoff; honor Retry-After within deadline; no retry on permanent 4xx |
+| Upstream resilience | Phase 2 exhibition route: ~25s total / ~20s per Met object (parallel). Full B05 backoff/Retry-After still Phase 3. Locked ~8s was too aggressive for Met cold starts. |
 | Motion | CSS transform/opacity FLIP or View Transitions; no extra library unless Phase 4 needs it; honor `prefers-reduced-motion` |
 | Env vars | None required for the museum API |
 | Normalized artwork shape | `id`, `title`, `artist`, `date`, `medium`, `image` (`primary` + `small`), `isPublicDomain`, `objectURL` — mapped from Met `objectID`, `title`, `artistDisplayName`, `objectDate`, `medium`, `primaryImage`/`primaryImageSmall`, `isPublicDomain`, `objectURL` |
@@ -67,6 +67,8 @@ UI components call these routes, not the museum API. Image requests may go direc
 
 **Exit:** A visitor can open the live URL and see three real works for the default subject, with loading and recoverable error behavior.
 
+**Status:** Complete. Production: https://museum-exhibition-iota.vercel.app — see root `BUILD_LOG.md`.
+
 ### Build, in order
 
 1. App shell, gallery layout, and artwork-shaped skeletons.
@@ -78,18 +80,18 @@ UI components call these routes, not the museum API. Image requests may go direc
 
 ### Test cases to pass
 
-| ID | Check | Covers | How |
-| --- | --- | --- | --- |
-| P2-1 | A visit with no URL state loads three distinct eligible works and the default title. | F01 | Browser, live |
-| P2-2 | Each work shows an uncropped image, title, artist, and date; missing optional metadata uses a fallback, never invented facts. | F03 | Browser |
-| P2-3 | Initial fetch shows artwork-shaped skeletons and an accessible loading status. | F01, N04, states | Browser |
-| P2-4 | Unsupported subjects and malformed IDs are rejected by the route with no upstream call. | B01 | Automated |
-| P2-5 | Records that are not explicitly public domain or lack a primary image never enter the exhibition. | B02 | Automated + live sample |
-| P2-6 | Normalized payload contains only the fields the UI needs; optional fields may be absent. | B03 | Automated |
-| P2-7 | Upstream timeout/outage shows a recoverable error with retry; no crash. | B06, states | Automated mock + live if needed |
-| P2-8 | A pool with fewer than three usable works shows a clear empty/insufficient state. | B02, states | Automated or fixture |
-| P2-9 | Layout holds at 375px, 768px, and 1440px with no page overflow. | N01 | Browser |
-| P2-10 | Production URL shows live museum metadata and real images. | Assessment API | Deployed smoke |
+| ID | Check | Covers | How | Result |
+| --- | --- | --- | --- | --- |
+| P2-1 | A visit with no URL state loads three distinct eligible works and the default title. | F01 | Browser, live | Pass |
+| P2-2 | Each work shows an uncropped image, title, artist, and date; missing optional metadata uses a fallback, never invented facts. | F03 | Browser | Pass |
+| P2-3 | Initial fetch shows artwork-shaped skeletons and an accessible loading status. | F01, N04, states | Browser | Pass |
+| P2-4 | Unsupported subjects and malformed IDs are rejected by the route with no upstream call. | B01 | Automated | Pass |
+| P2-5 | Records that are not explicitly public domain or lack a primary image never enter the exhibition. | B02 | Automated + live sample | Pass |
+| P2-6 | Normalized payload contains only the fields the UI needs; optional fields may be absent. | B03 | Automated | Pass |
+| P2-7 | Upstream timeout/outage shows a recoverable error with retry; no crash. | B06, states | Automated mock + live if needed | Pass |
+| P2-8 | A pool with fewer than three usable works shows a clear empty/insufficient state. | B02, states | Automated or fixture | Pass |
+| P2-9 | Layout holds at 375px, 768px, and 1440px with no page overflow. | N01 | Browser | Pass (local + production gallery) |
+| P2-10 | Production URL shows live museum metadata and real images. | Assessment API | Deployed smoke | Pass |
 
 ## Phase 3. Curation, Inspection, And Sharing
 
