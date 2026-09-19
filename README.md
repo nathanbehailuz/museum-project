@@ -28,6 +28,6 @@ None required. The Met Collection API does not use an API key. Do not commit sec
 - Reviewed subject pools in `data/subjects.json`
 - Images from `images.metmuseum.org`
 
-Phase 2 delivers the default Windows gallery through `/api/exhibitions`. Curation, sharing, and cache/retry polish come in later phases.
+Phase 3 adds curation, inspection, sharing, and a second subject (`chairs`). Query shape: `?subject=&ids=&title=`.
 
 See `docs/` and `BUILD_LOG.md` for product and build notes.

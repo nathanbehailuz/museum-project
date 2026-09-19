@@ -8,6 +8,14 @@
       "defaultArtworkIds": [9817, 14808, 453573],
       "artworkIds": [9817, 14808, 453573, 5497, 14807, 5496, 444829, 444826, 436896],
       "notes": "Launch subject. Reviewed against Met Collection API: isPublicDomain + primaryImage + visual window relevance."
+    },
+    {
+      "slug": "chairs",
+      "defaultTitle": "Chairs",
+      "published": true,
+      "defaultArtworkIds": [221, 230, 269],
+      "artworkIds": [221, 230, 269, 252, 219, 233, 177, 182, 212],
+      "notes": "Phase 3 second subject. Armchairs and related seating; PD + primaryImage verified live."
     }
   ],
   "artworkNotes": {
@@ -73,6 +81,69 @@
       "date": "ca. 1440",
       "objectURL": "https://www.metmuseum.org/art/collection/search/436896",
       "visualReview": "Painting where a casement window is a primary compositional element."
+    },
+    "221": {
+      "title": "Armchair",
+      "artist": "Herter Brothers",
+      "date": "1865–70",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/221",
+      "visualReview": "Upholstered armchair; clearly a chair."
+    },
+    "230": {
+      "title": "Armchair",
+      "artist": "Samuel McIntire",
+      "date": "1801",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/230",
+      "visualReview": "Carved Federal armchair; clearly a chair."
+    },
+    "269": {
+      "title": "Armchair",
+      "artist": "Duncan Phyfe",
+      "date": "1830–35",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/269",
+      "visualReview": "Phyfe armchair; clearly a chair."
+    },
+    "252": {
+      "title": "Armchair",
+      "artist": "",
+      "date": "1740–60",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/252",
+      "visualReview": "Eighteenth-century armchair; clearly a chair."
+    },
+    "219": {
+      "title": "Armchair",
+      "artist": "J. S. Ford, Johnson and Company",
+      "date": "ca. 1904",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/219",
+      "visualReview": "Mission-style armchair; clearly a chair."
+    },
+    "233": {
+      "title": "Armchair",
+      "artist": "Charles-Honoré Lannuier",
+      "date": "ca. 1810",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/233",
+      "visualReview": "Classical revival armchair; clearly a chair."
+    },
+    "177": {
+      "title": "Armchair",
+      "artist": "",
+      "date": "1760–90",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/177",
+      "visualReview": "Chippendale-period armchair; clearly a chair."
+    },
+    "182": {
+      "title": "Armchair",
+      "artist": "",
+      "date": "ca. 1755",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/182",
+      "visualReview": "Mid-eighteenth-century armchair; clearly a chair."
+    },
+    "212": {
+      "title": "Armchair",
+      "artist": "",
+      "date": "1770–90",
+      "objectURL": "https://www.metmuseum.org/art/collection/search/212",
+      "visualReview": "Late colonial armchair; clearly a chair."
     }
   },
   "rejectedDuringAudit": [

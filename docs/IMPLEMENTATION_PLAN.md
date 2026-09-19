@@ -1,6 +1,6 @@
 # Implementation Plan: Museum Exhibition Maker
 
-Status: Phase 2 complete — ready for Phase 3
+Status: Phase 3 complete — ready for Phase 4
 Related documents: [Project brief](PROJECT_BRIEF.md), [PRD](prd.md), [Content audit](content-audit.md)
 
 This document is the build order and phase gate list. The PRD stays the product contract: what must be true. Do not copy task lists back into the PRD.
@@ -18,11 +18,11 @@ A phase is done only when its test cases pass. Do not start the next phase's pro
 | Images | Use `primaryImageSmall` (gallery) and `primaryImage` (inspect) from the object record; host `images.metmuseum.org` |
 | Eligibility | `isPublicDomain === true` and non-empty `primaryImage`. Search `hasImages=true` is not sufficient. |
 | Default subject | `windows` / title `Windows` |
-| Launch pool | See [`data/subjects.json`](../data/subjects.json) — 9 reviewed IDs; default exhibition `[9817, 14808, 453573]` |
+| Launch pool | See [`data/subjects.json`](../data/subjects.json) — windows (9 IDs) + chairs (9 IDs); windows default exhibition `[9817, 14808, 453573]` |
 | App routes | `GET /api/exhibitions?subject=`, `GET /api/artworks?ids=`, `GET /api/replacements?subject=&exclude=` |
 | Deploy | Vercel |
 | Cache | Successful normalized metadata only; 1-hour TTL via Next.js/`fetch` cache on Vercel; never cache failures as success |
-| Upstream resilience | Phase 2 exhibition route: ~25s total / ~20s per Met object (parallel). Full B05 backoff/Retry-After still Phase 3. Locked ~8s was too aggressive for Met cold starts. |
+| Upstream resilience | ~25s total / ~20s per Met object (parallel); at most two retries on network/429/5xx with backoff; honor Retry-After within the deadline; no retry on permanent 4xx |
 | Motion | CSS transform/opacity FLIP or View Transitions; no extra library unless Phase 4 needs it; honor `prefers-reduced-motion` |
 | Env vars | None required for the museum API |
 | Normalized artwork shape | `id`, `title`, `artist`, `date`, `medium`, `image` (`primary` + `small`), `isPublicDomain`, `objectURL` — mapped from Met `objectID`, `title`, `artistDisplayName`, `objectDate`, `medium`, `primaryImage`/`primaryImageSmall`, `isPublicDomain`, `objectURL` |
@@ -96,6 +96,8 @@ UI components call these routes, not the museum API. Image requests may go direc
 ## Phase 3. Curation, Inspection, And Sharing
 
 **Exit:** The main journey works on the preview deployment: replace, reorder, title, inspect, copy a link, and reconstruct it in a fresh session.
+
+**Status:** Complete. Production https://museum-exhibition-iota.vercel.app — chairs published; share/curate/inspect live. P3-1–P3-14 recorded in BUILD_LOG.
 
 ### Build, in order
 

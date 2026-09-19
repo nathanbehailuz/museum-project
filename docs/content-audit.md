@@ -21,7 +21,9 @@ Date: 2026-09-18
 
 Tag-only searches for “windows” returned many Tiffany design drawings that were not public domain and had no `primaryImage`. Architectural / stained-glass queries were required.
 
-## Locked launch subject: windows
+## Locked launch subjects
+
+### windows
 
 Config: [`data/subjects.json`](../data/subjects.json)
 
@@ -31,6 +33,15 @@ Config: [`data/subjects.json`](../data/subjects.json)
 | Full launch pool (9) | 9817, 14808, 453573, 5497, 14807, 5496, 444829, 444826, 436896 |
 
 Each ID was live-fetched and visually reviewed. Rejected examples include non-PD Tiffany designs (e.g. 16967), casement listings with misleading images (1457), and figure-centered glass fragments (467916).
+
+### chairs (Phase 3)
+
+| Role | Object IDs |
+| --- | --- |
+| Default exhibition | 221, 230, 269 |
+| Full pool (9) | 221, 230, 269, 252, 219, 233, 177, 182, 212 |
+
+Live-fetched as public domain with `primaryImage`; object names are armchairs / side chair.
 
 ## Met quirks noted
 
