@@ -138,7 +138,7 @@ export default function SubjectInspection({
               style={{ transform: `scale(${zoom})` }}
             >
               <ArtworkImage
-                imageId={artwork.imageId}
+                src={artwork.imageUrl}
                 alt={
                   artwork.altText ||
                   artwork.title ||
@@ -146,7 +146,6 @@ export default function SubjectInspection({
                 }
                 width={artwork.imageWidth}
                 height={artwork.imageHeight}
-                large
               />
             </div>
             <h2 id={titleId} className={styles.inspectTitle}>
@@ -167,17 +166,17 @@ export default function SubjectInspection({
               </div>
               <div>
                 <dt>Museum</dt>
-                <dd>Art Institute of Chicago</dd>
+                <dd>The Metropolitan Museum of Art</dd>
               </div>
             </dl>
             {artwork.subjectTitles && artwork.subjectTitles.length > 0 && (
               <p className={styles.muted}>
-                Subjects: {artwork.subjectTitles.slice(0, 12).join(", ")}
+                Tags: {artwork.subjectTitles.slice(0, 12).join(", ")}
               </p>
             )}
             <p>
               <a href={artwork.sourceUrl} target="_blank" rel="noreferrer">
-                View on artic.edu
+                View on metmuseum.org
               </a>
             </p>
           </>

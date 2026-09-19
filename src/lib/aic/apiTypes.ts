@@ -19,7 +19,8 @@ export type ArtworkCard = {
   dateStart: number | null;
   mediumDisplay: string | null;
   artworkTypeTitle: string | null;
-  imageId: string | null;
+  /** Direct JPEG URL (Met primaryImageSmall / primaryImage). */
+  imageUrl: string | null;
   imageWidth: number | null;
   imageHeight: number | null;
   altText: string | null;

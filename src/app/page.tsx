@@ -46,7 +46,7 @@ async function FlowerTeaser() {
           {works.map((w) => (
             <figure key={w.sourceId} className={styles.teaserCard}>
               <ArtworkImage
-                imageId={w.imageId}
+                src={w.imageUrl}
                 alt={w.altText || w.title || "Artwork"}
                 width={w.imageWidth}
                 height={w.imageHeight}
@@ -75,7 +75,7 @@ async function FlowerTeaser() {
 export default function HomePage() {
   return (
     <main className={styles.page}>
-      <p className={styles.searchLabel}>Art Institute of Chicago</p>
+      <p className={styles.searchLabel}>The Metropolitan Museum of Art</p>
       <h1 className={styles.brand}>Subject museum</h1>
       <p className={styles.lede}>
         Search a subject, then follow its journey through time, browse every

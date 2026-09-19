@@ -15,9 +15,9 @@ const sans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "Subject museum · Art Institute of Chicago",
+  title: "Subject museum · The Met",
   description:
-    "Search a subject, follow its journey through time, browse works, and explore connections.",
+    "Search a subject, follow its journey through time, browse works, and explore connections in The Met collection.",
 };
 
 export default function RootLayout({

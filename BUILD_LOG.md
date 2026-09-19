@@ -136,7 +136,7 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Put `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` before re-running ingest (anon write policies revoked).
 - Met exhibition-maker code remains under `src/app` API/gallery files but is unused by the home route.
 - Preview deployments may have Vercel SSO; production alias is public.
-- Runtime images require the `iiif` Storage mirror (`npm run ingest:images` / GitHub Action); until that job succeeds, UI shows “Image unavailable”.
+- Met pivot live DDL applied without TRUNCATE; existing rows may still hold JPEG URLs in `image_id` until a reload writes `image_url` / `image_url_small`.
 
 ## Time spent
 
@@ -154,6 +154,28 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Total | ~12–14.5 h | Through AIC Phase 3 |
 
 ## Session notes
+
+### 2026-09-19 (apply Met pivot DDL live)
+
+- Applied schema from `supabase/migrations/20260919140000_met_pivot.sql` on project `soavlmfrtmobmgesccrp` via SQL Editor (Supabase MCP `apply_migration` unavailable this session).
+- Ran DDL only: `source` default → `met`; added `artworks.image_url` / `image_url_small`; added `evidence_source` enum value `tag`.
+- Skipped file `TRUNCATE` so the live Met index (flower/landscape/animal) stayed intact.
+- Verified: `has_image_url=true`, `has_image_url_small=true`, `source_default='met'::text`, `has_tag_enum=true`.
+
+### 2026-09-19 (Met Subject Museum pivot)
+
+- Replaced AIC as launch source with The Met Collection API + Open Access ingest path ([metmuseum.github.io](https://metmuseum.github.io/)).
+- Docs: brief, PRD, implementation plan, content-audit, README retargeted to Met JPEG hotlinks (no IIIF / Storage mirror for runtime).
+- Schema migration file `20260919140000_met_pivot.sql` (image_url columns + truncate); live DDL applied in follow-up note (TRUNCATE skipped).
+- Ingest: `npm run ingest` searches `/v1.1` for flower/landscape/animal, fetches objects, upserts `artworks`/`terms`/`artwork_terms`; attaches query as tag. Connections/periods recomputed.
+- Launch: flower, landscape, animal `journey_ready`; journey APIs return `imageUrl` on `images.metmuseum.org` (HTTP 200 JPEG). UI `ArtworkImage` uses `src={imageUrl}`.
+- Verified local + production: flower/landscape/animal journey_ready with Met JPEG `imageUrl`s; https://museum-exhibition-iota.vercel.app
+
+### 2026-09-19 (Met throwaway POC)
+
+- AIC IIIF still blocked by Cloudflare; Met `images.metmuseum.org` JPEGs return HTTP 200 with CORS `*`.
+- Throwaway: `scripts/poc/met-seed.ts` searches Met `/v1.1/search?q=flower`, upserts into `artworks` (`source=met`, JPEG URL in `image_id`).
+- Page: `/poc/met` reads those rows and displays `<img>` from Met CDN. Not wired into the main subject museum UI.
 
 ### 2026-09-19 (IIIF mirror → Supabase Storage)
 

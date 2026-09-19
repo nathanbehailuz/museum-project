@@ -11,7 +11,7 @@ type Props = {
   activeChapter: number | null;
 };
 
-function WorkThumb({ work, featured }: { work: ArtworkCard; featured?: boolean }) {
+function WorkThumb({ work }: { work: ArtworkCard }) {
   const open = useOpenArtwork();
   const btnRef = useRef<HTMLButtonElement>(null);
   return (
@@ -22,11 +22,10 @@ function WorkThumb({ work, featured }: { work: ArtworkCard; featured?: boolean }
       onClick={() => open(work.sourceId, btnRef.current)}
     >
       <ArtworkImage
-        imageId={work.imageId}
+        src={work.imageUrl}
         alt={work.altText || work.title || "Artwork"}
         width={work.imageWidth}
         height={work.imageHeight}
-        large={featured}
       />
       <div className={styles.workCaption}>
         <strong>{work.title || "Untitled"}</strong>
@@ -87,8 +86,8 @@ export default function JourneyView({ chapters, activeChapter }: Props) {
             {ch.workCount ? ` · ${ch.workCount} works in this period` : ""}
           </p>
           <div className={styles.chapterWorks}>
-            {ch.featured.map((work, i) => (
-              <WorkThumb key={work.sourceId} work={work} featured={i === 0} />
+            {ch.featured.map((work) => (
+              <WorkThumb key={work.sourceId} work={work} />
             ))}
           </div>
         </section>

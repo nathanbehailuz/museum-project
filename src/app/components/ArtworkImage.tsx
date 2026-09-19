@@ -1,37 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { iiifLarge, iiifThumb, aspectRatio } from "@/lib/aic/iiif";
 import styles from "./museum.module.css";
 
 type Props = {
-  imageId: string | null;
+  src: string | null;
   alt: string;
   width?: number | null;
   height?: number | null;
-  large?: boolean;
   className?: string;
 };
 
+function aspectRatio(
+  width: number | null | undefined,
+  height: number | null | undefined,
+): number {
+  if (!width || !height || width <= 0 || height <= 0) return 0.8;
+  return width / height;
+}
+
 export default function ArtworkImage({
-  imageId,
+  src,
   alt,
   width,
   height,
-  large,
   className,
 }: Props) {
   const [failed, setFailed] = useState(false);
-  const ratio = aspectRatio(width, height) ?? 0.8;
+  const ratio = aspectRatio(width, height);
 
-  const src =
-    imageId && !failed
-      ? large
-        ? iiifLarge(imageId)
-        : iiifThumb(imageId)
-      : null;
-
-  if (!src) {
+  if (!src || failed) {
     return (
       <div
         className={`${styles.imageFallback} ${className ?? ""}`}
@@ -52,6 +50,7 @@ export default function ArtworkImage({
       className={`${styles.artworkImg} ${className ?? ""}`}
       style={{ aspectRatio: String(ratio) }}
       loading="lazy"
+      referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
     />
   );

@@ -1,0 +1,90 @@
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  font-family: Georgia, "Times New Roman", serif;
+  color: #1a1a1a;
+  background: #f7f5f1;
+  min-height: 100vh;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0 0 0.5rem;
+  font-family: system-ui, sans-serif;
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.lede {
+  margin: 0 0 2rem;
+  color: #444;
+  max-width: 36rem;
+  line-height: 1.45;
+  font-family: system-ui, sans-serif;
+  font-size: 0.95rem;
+}
+
+.lede code,
+.muted code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+.muted {
+  color: #666;
+  font-family: system-ui, sans-serif;
+}
+
+.error {
+  color: #7a2e2e;
+  font-family: ui-monospace, monospace;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  margin: 0;
+}
+
+.card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ddd;
+}
+
+.card figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  font-family: system-ui, sans-serif;
+}
+
+.card a {
+  color: inherit;
+  margin-top: 0.25rem;
+}
+
+.fallback {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: #ddd;
+  color: #666;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+}

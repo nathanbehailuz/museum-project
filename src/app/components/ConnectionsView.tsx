@@ -152,7 +152,7 @@ function StripCell({
       onClick={() => open(work.sourceId, ref.current)}
     >
       <ArtworkImage
-        imageId={work.imageId}
+        src={work.imageUrl}
         alt={work.altText || work.title || "Artwork"}
         width={work.imageWidth}
         height={work.imageHeight}

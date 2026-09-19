@@ -23,6 +23,8 @@ type ArtworkRow = {
   medium_display: string | null;
   artwork_type_title: string | null;
   image_id: string | null;
+  image_url?: string | null;
+  image_url_small?: string | null;
   image_width: number | null;
   image_height: number | null;
   alt_text: string | null;
@@ -46,6 +48,11 @@ export function mapArtwork(
   row: ArtworkRow,
   evidenceSource?: string | null,
 ): ArtworkCard {
+  const imageUrl =
+    row.image_url_small ||
+    row.image_url ||
+    row.image_id ||
+    null;
   return {
     sourceId: row.source_id,
     title: row.title,
@@ -54,7 +61,7 @@ export function mapArtwork(
     dateStart: row.date_start,
     mediumDisplay: row.medium_display,
     artworkTypeTitle: row.artwork_type_title,
-    imageId: row.image_id,
+    imageUrl,
     imageWidth: row.image_width,
     imageHeight: row.image_height,
     altText: row.alt_text,
@@ -141,7 +148,7 @@ export async function getArtworkBySourceId(sourceId: string) {
     .select(
       "id, source_id, title, artist_title, date_display, date_start, medium_display, artwork_type_title, image_id, image_width, image_height, alt_text, source_url, subject_titles, term_titles",
     )
-    .eq("source", "artic")
+    .eq("source", "met")
     .eq("source_id", sourceId)
     .maybeSingle();
   if (error) throw error;

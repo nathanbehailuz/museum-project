@@ -1,152 +1,141 @@
 /**
- * Phase 1 ingest:
- * 1. Load AIC getting-started ID universe (someArtworks + optional jsonl sample)
- * 2. Enrich from live API (subject_titles, term_titles, PD, image, dates)
- * 3. Upsert artworks + terms + artwork_terms; validate term status
- * 4. Record ingestion_runs
+ * Met Subject Museum ingest (assessment slice).
+ * Searches Met /v1.1 for launch tags, fetches objects, upserts artworks + terms.
  *
- * Requires SUPABASE_SERVICE_ROLE_KEY in .env.local
+ * image_id column stores the JPEG URL (Met primaryImageSmall) until image_url
+ * migration is applied. See supabase/migrations/20260919140000_met_pivot.sql
+ *
+ * Usage: npm run ingest
  */
 import { createClient } from "@supabase/supabase-js";
-import { createReadStream } from "node:fs";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
-import readline from "node:readline";
 import { config } from "dotenv";
 import {
   extractCatalogTermLinks,
-  isLanguageRejected,
-  normalizeArtwork,
-  normalizeTermLabel,
+  isDisplayableArtwork,
+  normalizeMetObject,
   slugifyTerm,
-} from "../../src/lib/aic/normalize";
-import type { ArticArtworkApi, NormalizedArtwork } from "../../src/lib/aic/types";
-import { ARTIC_FIELDS } from "../../src/lib/aic/types";
-import {
-  type TermAggregate,
-  validateTerm,
-} from "../../src/lib/aic/validate";
+  type MetObjectApi,
+} from "../../src/lib/index/normalize";
+import { validateTerm, type TermAggregate } from "../../src/lib/index/validate";
 
 config({ path: ".env.local" });
 
-const DATA = path.resolve(process.cwd(), "data/aic");
-const ARTIC = "https://api.artic.edu/api/v1/artworks";
-const UA = "museum-exhibition/0.1 (Phase1 ingest; +https://github.com/)";
+const MET = "https://collectionapi.metmuseum.org";
+const DATA = path.resolve(process.cwd(), "data/met");
+const PER_QUERY = Number(process.env.MET_INGEST_LIMIT ?? "80");
+const QUERIES = (
+  process.env.MET_INGEST_QUERIES ?? "flower,landscape,animal,bird,horse,tree,water"
+).split(",").map((s) => s.trim()).filter(Boolean);
 
-const EXTRA_JSONL_IDS = Number(process.env.INGEST_EXTRA_JSONL_IDS ?? "1500");
-const BATCH = 40;
-const BATCH_PAUSE_MS = 1100;
+function requireEnv(name: string) {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing ${name}`);
+  return v;
+}
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function loadSomeArtworkIds(): Promise<number[]> {
-  const csv = await readFile(path.join(DATA, "someArtworks.csv"), "utf8");
-  const ids: number[] = [];
-  for (const line of csv.split(/\r?\n/).slice(1)) {
-    if (!line.trim()) continue;
-    const id = Number(line.split(",")[0]);
-    if (Number.isFinite(id)) ids.push(id);
-  }
-  return ids;
-}
-
-async function loadExtraJsonlIds(limit: number, exclude: Set<number>) {
-  const ids: number[] = [];
-  const rl = readline.createInterface({
-    input: createReadStream(path.join(DATA, "allArtworks.jsonl")),
-    crlfDelay: Infinity,
-  });
-  for await (const line of rl) {
-    if (ids.length >= limit) break;
-    if (!line.trim()) continue;
+async function fetchJson<T>(url: string, attempts = 4): Promise<T | null> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
     try {
-      const row = JSON.parse(line) as { id?: number };
-      if (row.id != null && !exclude.has(row.id)) ids.push(row.id);
-    } catch {
-      /* skip */
+      const res = await fetch(url, {
+        headers: { "User-Agent": "museum-exhibition-met-ingest/1.0" },
+        signal: AbortSignal.timeout(45_000),
+      });
+      if (res.status === 404 || res.status === 403) return null;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return (await res.json()) as T;
+    } catch (err) {
+      lastErr = err;
+      await sleep(500 * (i + 1));
     }
   }
-  return ids;
-}
-
-async function enrichIds(ids: number[]): Promise<ArticArtworkApi[]> {
-  const out: ArticArtworkApi[] = [];
-  for (let i = 0; i < ids.length; i += BATCH) {
-    const chunk = ids.slice(i, i + BATCH);
-    const url = `${ARTIC}?ids=${chunk.join(",")}&limit=${chunk.length}&fields=${ARTIC_FIELDS}`;
-    const res = await fetch(url, { headers: { "User-Agent": UA } });
-    if (!res.ok) {
-      throw new Error(`AIC enrich failed ${res.status}: ${await res.text()}`);
-    }
-    const json = (await res.json()) as { data: ArticArtworkApi[] };
-    out.push(...(json.data ?? []));
-    console.log(`Enriched ${Math.min(i + BATCH, ids.length)} / ${ids.length}`);
-    if (i + BATCH < ids.length) await sleep(BATCH_PAUSE_MS);
-  }
-  return out;
-}
-
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing ${name} — copy .env.example to .env.local`);
-  return v;
-}
-
-async function loadOrEnrichArtworks(): Promise<NormalizedArtwork[]> {
-  const cachePath = path.join(DATA, "enriched-cache.json");
-  if (process.env.INGEST_USE_CACHE === "1") {
-    const raw = await readFile(cachePath, "utf8");
-    console.log(`Using cache ${cachePath}`);
-    return JSON.parse(raw) as NormalizedArtwork[];
-  }
-
-  const someIds = await loadSomeArtworkIds();
-  const exclude = new Set(someIds);
-  const extra = await loadExtraJsonlIds(EXTRA_JSONL_IDS, exclude);
-  const allIds = [...someIds, ...extra];
-  console.log(
-    `ID universe: ${someIds.length} someArtworks + ${extra.length} jsonl = ${allIds.length}`,
-  );
-
-  const apiRows = await enrichIds(allIds);
-  const artworks = apiRows.map(normalizeArtwork);
-  await mkdir(DATA, { recursive: true });
-  await writeFile(cachePath, JSON.stringify(artworks), "utf8");
-  console.log(`Wrote ${cachePath} (${artworks.length} artworks)`);
-  return artworks;
+  console.warn("give up", url, lastErr);
+  return null;
 }
 
 async function main() {
-  const artworks = await loadOrEnrichArtworks();
-
-  if (process.env.INGEST_ENRICH_ONLY === "1") {
-    console.log("INGEST_ENRICH_ONLY=1 — skipping Supabase upsert");
-    return;
-  }
-
+  await mkdir(DATA, { recursive: true });
   const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const serviceKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
-  const supabase = createClient(url, serviceKey, {
+  const key = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const supabase = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  const artworks = [];
+  /** source_id -> search queries that found it */
+  const foundBy = new Map<string, Set<string>>();
+  const idsByQuery = new Map<string, number[]>();
+  const objectIds = new Set<number>();
+
+  for (const q of QUERIES) {
+    const searchUrl = `${MET}/public/collection/v1.1/search?q=${encodeURIComponent(q)}&hasImages=true&isPublicDomain=true&limit=${PER_QUERY}`;
+    console.log("search", q);
+    const json = await fetchJson<{ objectIDs: number[] | null }>(searchUrl);
+    if (!json) throw new Error(`Search failed for ${q}`);
+    const ids = json.objectIDs ?? [];
+    idsByQuery.set(q, ids);
+    for (const id of ids) objectIds.add(id);
+    await sleep(200);
+  }
+  console.log(`Unique object IDs: ${objectIds.size}`);
+
+  let i = 0;
+  const byId = new Map<string, ReturnType<typeof normalizeMetObject>>();
+  for (const id of objectIds) {
+    i++;
+    if (i % 25 === 0) console.log(`fetch objects ${i}/${objectIds.size}`);
+    const obj = await fetchJson<MetObjectApi>(
+      `${MET}/public/collection/v1/objects/${id}`,
+    );
+    if (!obj) {
+      await sleep(100);
+      continue;
+    }
+    const norm = normalizeMetObject(obj);
+    if (norm && norm.is_public_domain && (norm.image_url || norm.image_url_small)) {
+      byId.set(norm.source_id, norm);
+    }
+    await sleep(120);
+  }
+
+  // Attach launch query as a tag so search hits become subject terms
+  for (const [q, ids] of idsByQuery) {
+    for (const id of ids) {
+      const norm = byId.get(String(id));
+      if (!norm) continue;
+      if (!norm.subject_titles.map((t) => t.toLowerCase()).includes(q)) {
+        norm.subject_titles = [...norm.subject_titles, q];
+      }
+      const set = foundBy.get(norm.source_id) ?? new Set();
+      set.add(q);
+      foundBy.set(norm.source_id, set);
+    }
+  }
+
+  for (const norm of byId.values()) artworks.push(norm!);
+  console.log(`Normalized PD artworks: ${artworks.length}`);
+  if (!artworks.length) throw new Error("No artworks ingested");
 
   const { data: runRow, error: runErr } = await supabase
     .from("ingestion_runs")
     .insert({
-      source: "artic",
-      source_version: "getting-started+live-enrich",
-      notes: `artworks=${artworks.length}`,
+      source: "met",
+      source_version: "api-v1.1-slice",
+      notes: `queries=${QUERIES.join(",")}; objects=${artworks.length}`,
     })
     .select("id")
     .single();
   if (runErr) throw runErr;
-  const runId = runRow.id as string;
 
-  // Upsert artworks
+  // Upsert artworks — JPEG URL in image_id for compatibility without DDL
   const artworkPayload = artworks.map((a) => ({
-    source: a.source,
+    source: "met",
     source_id: a.source_id,
     title: a.title,
     artist_title: a.artist_title,
@@ -155,7 +144,7 @@ async function main() {
     date_display: a.date_display,
     medium_display: a.medium_display,
     artwork_type_title: a.artwork_type_title,
-    image_id: a.image_id,
+    image_id: a.image_url_small || a.image_url,
     image_width: a.image_width,
     image_height: a.image_height,
     alt_text: a.alt_text,
@@ -164,36 +153,35 @@ async function main() {
     subject_titles: a.subject_titles,
     term_titles: a.term_titles,
     raw_department: a.raw_department,
+    updated_at: new Date().toISOString(),
   }));
 
-  for (let i = 0; i < artworkPayload.length; i += 200) {
-    const chunk = artworkPayload.slice(i, i + 200);
+  for (let i = 0; i < artworkPayload.length; i += 100) {
+    const chunk = artworkPayload.slice(i, i + 100);
     const { error } = await supabase.from("artworks").upsert(chunk, {
       onConflict: "source,source_id",
     });
     if (error) throw error;
   }
-  console.log(`Upserted ${artworkPayload.length} artworks`);
+  console.log("Upserted artworks");
 
-  const { data: dbArtworks, error: fetchArtErr } = await supabase
+  const { data: artRows, error: artErr } = await supabase
     .from("artworks")
     .select("id, source_id")
-    .eq("source", "artic")
-    .in(
-      "source_id",
-      artworks.map((a) => a.source_id),
-    );
-  if (fetchArtErr) throw fetchArtErr;
+    .eq("source", "met");
+  if (artErr) throw artErr;
   const idBySource = new Map(
-    (dbArtworks ?? []).map((r) => [r.source_id as string, r.id as string]),
+    (artRows ?? []).map((r) => [r.source_id as string, r.id as string]),
   );
 
-  // Build term aggregates from catalog evidence only
+  // Aggregate terms
   const byCanonical = new Map<string, TermAggregate & { links: ReturnType<typeof extractCatalogTermLinks> }>();
   for (const a of artworks) {
+    if (!isDisplayableArtwork(a) && !(a.is_public_domain && a.date_start != null && (a.image_url || a.image_url_small))) {
+      // still index tags for PD dated works with images
+    }
     const links = extractCatalogTermLinks(a);
     for (const link of links) {
-      if (isLanguageRejected(link.canonical)) continue;
       let agg = byCanonical.get(link.canonical);
       if (!agg) {
         agg = {
@@ -211,140 +199,107 @@ async function main() {
     }
   }
 
-  const validations = [...byCanonical.values()].map((agg) => ({
-    agg,
-    v: validateTerm(agg),
-  }));
+  const termPayload = [];
+  const validations = [];
+  for (const agg of byCanonical.values()) {
+    const v = validateTerm(agg);
+    validations.push(v);
+    termPayload.push({
+      slug: slugifyTerm(agg.canonical),
+      canonical: agg.canonical,
+      display_label: agg.display_label,
+      aliases: [] as string[],
+      status: v.status,
+      qualifying_work_count: v.qualifying_work_count,
+      date_min: v.date_min,
+      date_max: v.date_max,
+      year_span: v.year_span,
+      bucket_count: v.bucket_count,
+      artist_count: v.artist_count,
+      artwork_type_count: v.artwork_type_count,
+      medium_count: v.medium_count,
+      max_artist_share: v.max_artist_share,
+      validation_reasons: v.reasons,
+      updated_at: new Date().toISOString(),
+    });
+  }
 
-  const termRows = validations.map(({ agg, v }) => ({
-    slug: slugifyTerm(agg.canonical),
-    canonical: agg.canonical,
-    display_label: agg.display_label,
-    aliases:
-      normalizeTermLabel(agg.canonical + "s") === agg.canonical
-        ? []
-        : [`${agg.canonical}s`],
-    status: v.status,
-    qualifying_work_count: v.qualifying_work_count,
-    date_min: v.date_min,
-    date_max: v.date_max,
-    artist_count: v.artist_count,
-    artwork_type_count: v.artwork_type_count,
-    medium_count: v.medium_count,
-    max_artist_share: v.max_artist_share,
-    year_span: v.year_span,
-    bucket_count: v.bucket_count,
-    validation_reasons: v.reasons,
-  }));
-
-  for (let i = 0; i < termRows.length; i += 200) {
-    const chunk = termRows.slice(i, i + 200);
-    const { error } = await supabase.from("terms").upsert(chunk, {
+  for (let i = 0; i < termPayload.length; i += 100) {
+    const { error } = await supabase.from("terms").upsert(termPayload.slice(i, i + 100), {
       onConflict: "slug",
     });
     if (error) throw error;
   }
-  console.log(`Upserted ${termRows.length} terms`);
+  console.log(`Upserted ${termPayload.length} terms`);
 
-  const { data: dbTerms, error: termFetchErr } = await supabase
+  const { data: termRows, error: termErr } = await supabase
     .from("terms")
-    .select("id, canonical, status");
-  if (termFetchErr) throw termFetchErr;
+    .select("id, canonical, slug");
+  if (termErr) throw termErr;
   const termIdByCanonical = new Map(
-    (dbTerms ?? []).map((t) => [t.canonical as string, t.id as string]),
+    (termRows ?? []).map((t) => [t.canonical as string, t.id as string]),
   );
 
-  // Replace artwork_terms for these artworks (delete then insert)
-  const artworkUuids = [...idBySource.values()];
-  for (let i = 0; i < artworkUuids.length; i += 200) {
-    const chunk = artworkUuids.slice(i, i + 200);
-    const { error } = await supabase
+  // Clear old links then insert
+  const artIds = [...idBySource.values()];
+  for (let i = 0; i < artIds.length; i += 50) {
+    await supabase
       .from("artwork_terms")
       .delete()
-      .in("artwork_id", chunk);
-    if (error) throw error;
+      .in("artwork_id", artIds.slice(i, i + 50));
   }
 
-  const atRows: {
-    artwork_id: string;
-    term_id: string;
-    evidence_source: string;
-    relevance_weight: number;
-  }[] = [];
-  for (const { agg } of validations) {
-    const termId = termIdByCanonical.get(agg.canonical);
-    if (!termId) continue;
-    const seen = new Set<string>();
-    for (const link of agg.links) {
-      const artworkId = idBySource.get(link.source_id);
-      if (!artworkId) continue;
-      const key = `${artworkId}:${termId}:${link.evidence_source}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      atRows.push({
+  const linkRows: Record<string, unknown>[] = [];
+  for (const a of artworks) {
+    const artworkId = idBySource.get(a.source_id);
+    if (!artworkId) continue;
+    for (const link of extractCatalogTermLinks(a)) {
+      const termId = termIdByCanonical.get(link.canonical);
+      if (!termId) continue;
+      linkRows.push({
         artwork_id: artworkId,
         term_id: termId,
-        evidence_source: link.evidence_source,
+        evidence_source: "term", // enum may lack 'tag' until migration; 'term' = Met tag
         relevance_weight: link.relevance_weight,
       });
     }
   }
-
-  for (let i = 0; i < atRows.length; i += 500) {
-    const chunk = atRows.slice(i, i + 500);
-    const { error } = await supabase.from("artwork_terms").insert(chunk);
+  // dedupe
+  const seen = new Set<string>();
+  const uniqueLinks = linkRows.filter((r) => {
+    const k = `${r.artwork_id}:${r.term_id}:${r.evidence_source}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  for (let i = 0; i < uniqueLinks.length; i += 200) {
+    const { error } = await supabase.from("artwork_terms").upsert(uniqueLinks.slice(i, i + 200));
     if (error) throw error;
   }
-  console.log(`Inserted ${atRows.length} artwork_terms`);
+  console.log(`Upserted ${uniqueLinks.length} artwork_terms`);
 
-  const journey = validations.filter((x) => x.v.status === "journey_ready");
-  const browse = validations.filter((x) => x.v.status === "browse_only");
-  const unavailable = validations.filter((x) => x.v.status === "unavailable");
-
-  await supabase
-    .from("ingestion_runs")
-    .update({
-      finished_at: new Date().toISOString(),
-      artworks_upserted: artworks.length,
-      terms_upserted: termRows.length,
-      artwork_terms_upserted: atRows.length,
-      rejected_term_count: unavailable.length,
-      journey_ready_count: journey.length,
-      browse_only_count: browse.length,
-      unavailable_count: unavailable.length,
-    })
-    .eq("id", runId);
-
-  const summary = {
-    runId,
-    artworks: artworks.length,
-    terms: termRows.length,
-    journey_ready: journey
-      .sort((a, b) => b.v.qualifying_work_count - a.v.qualifying_work_count)
-      .slice(0, 20)
-      .map((x) => ({
-        canonical: x.agg.canonical,
-        works: x.v.qualifying_work_count,
-        span: x.v.year_span,
-        artists: x.v.artist_count,
-      })),
-    browse_only_top: browse
-      .sort((a, b) => b.v.qualifying_work_count - a.v.qualifying_work_count)
-      .slice(0, 10)
-      .map((x) => ({
-        canonical: x.agg.canonical,
-        works: x.v.qualifying_work_count,
-        reasons: x.v.reasons,
-      })),
-  };
+  const journey = validations.filter((v) => v.status === "journey_ready");
   await writeFile(
     path.join(DATA, "ingest-summary.json"),
-    JSON.stringify(summary, null, 2),
+    JSON.stringify(
+      {
+        runId: runRow.id,
+        artworks: artworks.length,
+        terms: termPayload.length,
+        journey_ready: journey.map((j) => j.canonical),
+        journey_ready_count: journey.length,
+      },
+      null,
+      2,
+    ),
   );
-  console.log(JSON.stringify(summary, null, 2));
+  console.log(
+    `Done. journey_ready=${journey.length}`,
+    journey.slice(0, 15).map((j) => j.canonical),
+  );
 }
 
-main().catch((err) => {
-  console.error(err);
+main().catch((e) => {
+  console.error(e);
   process.exit(1);
 });

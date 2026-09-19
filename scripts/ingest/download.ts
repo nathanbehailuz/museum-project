@@ -1,6 +1,6 @@
 /**
- * Download AIC getting-started files into data/aic/
- * Sources: https://github.com/art-institute-of-chicago/api-data
+ * Download Met Open Access CSV (optional bulk). Large file.
+ * https://github.com/metmuseum/openaccess
  */
 import { createWriteStream } from "node:fs";
 import { mkdir } from "node:fs/promises";
@@ -8,32 +8,25 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 
-const ROOT = path.resolve(process.cwd(), "data/aic");
-const BASE =
-  "https://raw.githubusercontent.com/art-institute-of-chicago/api-data/master/getting-started";
-
-const FILES = ["allArtworks.jsonl", "someArtworks.csv"] as const;
-
-async function download(name: (typeof FILES)[number]) {
-  const url = `${BASE}/${name}`;
-  const dest = path.join(ROOT, name);
-  console.log(`Downloading ${url}`);
-  const res = await fetch(url, {
-    headers: { "User-Agent": "museum-exhibition/0.1 (getting-started download)" },
-  });
-  if (!res.ok || !res.body) {
-    throw new Error(`Failed ${url}: ${res.status}`);
-  }
-  await pipeline(Readable.fromWeb(res.body as never), createWriteStream(dest));
-  console.log(`Wrote ${dest}`);
-}
+const OUT_DIR = path.resolve(process.cwd(), "data/met");
+const CSV_URL =
+  process.env.MET_CSV_URL ??
+  "https://media.githubusercontent.com/media/metmuseum/openaccess/master/MetObjects.csv";
 
 async function main() {
-  await mkdir(ROOT, { recursive: true });
-  for (const f of FILES) await download(f);
+  await mkdir(OUT_DIR, { recursive: true });
+  const dest = path.join(OUT_DIR, "MetObjects.csv");
+  console.log("Fetching", CSV_URL);
+  const res = await fetch(CSV_URL, {
+    headers: { "User-Agent": "museum-exhibition-met-ingest/1.0" },
+  });
+  if (!res.ok || !res.body) throw new Error(`Download failed: ${res.status}`);
+  // @ts-expect-error Node fetch body
+  await pipeline(Readable.fromWeb(res.body), createWriteStream(dest));
+  console.log("Wrote", dest);
 }
 
-main().catch((err) => {
-  console.error(err);
+main().catch((e) => {
+  console.error(e);
   process.exit(1);
 });

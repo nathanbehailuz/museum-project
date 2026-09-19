@@ -1,27 +1,26 @@
 /**
- * Phase 2: compute term_connections + term_periods from the Phase 1 index.
- * Requires SUPABASE_SERVICE_ROLE_KEY in .env.local
+ * Compute term_connections + term_periods from Met index.
  */
 import { createClient } from "@supabase/supabase-js";
-import { writeFile } from "node:fs/promises";
+import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { config } from "dotenv";
 import {
   computeConnections,
   type ArtworkTermLink,
   type TermMeta,
-} from "../../src/lib/aic/connections";
-import { computeTermPeriods } from "../../src/lib/aic/periods";
+} from "../../src/lib/index/connections";
+import { computeTermPeriods } from "../../src/lib/index/periods";
 
 config({ path: ".env.local" });
 
-const DATA = path.resolve(process.cwd(), "data/aic");
+const DATA = path.resolve(process.cwd(), "data/met");
 const LAUNCH = ["flower", "landscape", "animal"] as const;
 const PAGE = 1000;
 
 function requireEnv(name: string): string {
   const v = process.env[name];
-  if (!v) throw new Error(`Missing ${name} in .env.local`);
+  if (!v) throw new Error(`Missing ${name}`);
   return v;
 }
 
@@ -43,6 +42,7 @@ async function fetchAll<T>(
 }
 
 async function main() {
+  await mkdir(DATA, { recursive: true });
   const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
   const key = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
   const supabase = createClient(url, key, {
@@ -68,17 +68,11 @@ async function main() {
     supabase
       .from("artworks")
       .select("id, date_start, artist_title, is_public_domain, image_id")
-      .eq("source", "artic"),
+      .eq("source", "met"),
   );
   const qualifying = new Set(
     artworks
-      .filter(
-        (a) =>
-          a.is_public_domain &&
-          !!a.image_id &&
-          a.date_start != null &&
-          Number.isFinite(a.date_start),
-      )
+      .filter((a) => a.is_public_domain && a.image_id && a.date_start != null)
       .map((a) => a.id),
   );
   const artById = new Map(artworks.map((a) => [a.id, a]));
@@ -86,139 +80,95 @@ async function main() {
   const terms = await fetchAll<TermRow>(() =>
     supabase.from("terms").select("id, canonical, slug, aliases, status"),
   );
-  const termMetas: TermMeta[] = terms.map((t) => ({
+  const termMeta: TermMeta[] = terms.map((t) => ({
     id: t.id,
     canonical: t.canonical,
     slug: t.slug,
     aliases: t.aliases ?? [],
     status: t.status,
   }));
-  const termById = new Map(termMetas.map((t) => [t.id, t]));
-  const termByCanonical = new Map(termMetas.map((t) => [t.canonical, t]));
 
   const links = await fetchAll<ArtworkTermLink>(() =>
     supabase
       .from("artwork_terms")
       .select("artwork_id, term_id, evidence_source")
-      .in("evidence_source", ["subject", "term"]),
+      .in("evidence_source", ["term", "subject"]),
   );
+  const qualifyingLinks = links.filter((l) => qualifying.has(l.artwork_id));
 
   const artworkTermSets = new Map<string, Set<string>>();
-  for (const link of links) {
-    if (!qualifying.has(link.artwork_id)) continue;
-    let set = artworkTermSets.get(link.artwork_id);
+  for (const l of qualifyingLinks) {
+    let set = artworkTermSets.get(l.artwork_id);
     if (!set) {
       set = new Set();
-      artworkTermSets.set(link.artwork_id, set);
+      artworkTermSets.set(l.artwork_id, set);
     }
-    set.add(link.term_id);
+    set.add(l.term_id);
   }
 
-  console.log(
-    `qualifying artworks=${qualifying.size}; linked sets=${artworkTermSets.size}; terms=${termMetas.length}`,
-  );
+  const edges = computeConnections({
+    terms: termMeta,
+    artworkTermSets,
+  });
+  console.log(`connections=${edges.length}`);
 
-  const edges = computeConnections({ terms: termMetas, artworkTermSets });
-  console.log(`connection edges=${edges.length}`);
-
-  // Full refresh of connections for this sample index
-  {
+  await supabase.from("term_connections").delete().gte("shared_work_count", 0);
+  for (let i = 0; i < edges.length; i += 100) {
     const { error } = await supabase
       .from("term_connections")
-      .delete()
-      .neq("source_term_id", "00000000-0000-0000-0000-000000000000");
+      .upsert(edges.slice(i, i + 100));
     if (error) throw error;
   }
 
-  for (let i = 0; i < edges.length; i += 500) {
-    const chunk = edges.slice(i, i + 500).map((e) => ({
-      ...e,
-      computed_at: new Date().toISOString(),
-    }));
-    const { error } = await supabase.from("term_connections").insert(chunk);
-    if (error) throw error;
-  }
-
-  // Periods for all journey_ready terms
-  const journeyReady = termMetas.filter((t) => t.status === "journey_ready");
-  const periodRows = [];
-  for (const t of journeyReady) {
-    const works: { id: string; date_start: number; artist_title: string | null }[] =
-      [];
-    for (const [artworkId, set] of artworkTermSets) {
-      if (!set.has(t.id)) continue;
-      const art = artById.get(artworkId);
-      if (!art || art.date_start == null) continue;
-      works.push({
-        id: art.id,
-        date_start: art.date_start,
-        artist_title: art.artist_title,
-      });
-    }
-    periodRows.push(...computeTermPeriods(t.id, works));
-  }
-
-  const journeyIds = journeyReady.map((t) => t.id);
-  if (journeyIds.length) {
-    const { error } = await supabase
-      .from("term_periods")
-      .delete()
-      .in("term_id", journeyIds);
-    if (error) throw error;
-  }
-  for (let i = 0; i < periodRows.length; i += 500) {
-    const { error } = await supabase
-      .from("term_periods")
-      .insert(periodRows.slice(i, i + 500));
-    if (error) throw error;
-  }
-  console.log(`term_periods rows=${periodRows.length}`);
-
-  const summary: Record<
-    string,
-    {
-      edges: {
-        target: string;
-        shared: number;
-        score: number;
-        samples: string[];
-      }[];
-      periods: number;
-    }
-  > = {};
-
-  for (const canonical of LAUNCH) {
-    const src = termByCanonical.get(canonical);
-    if (!src) {
-      summary[canonical] = { edges: [], periods: 0 };
-      continue;
-    }
-    const outbound = edges
-      .filter((e) => e.source_term_id === src.id)
-      .map((e) => ({
-        target: termById.get(e.target_term_id)?.canonical ?? e.target_term_id,
-        shared: e.shared_work_count,
-        score: Number(e.connection_score.toFixed(6)),
-        samples: e.sample_artwork_ids,
+  await supabase.from("term_periods").delete().gte("period_index", -9999);
+  let periodRows = 0;
+  for (const t of termMeta.filter((x) => x.status === "journey_ready")) {
+    const artIds = qualifyingLinks
+      .filter((l) => l.term_id === t.id)
+      .map((l) => l.artwork_id);
+    const dated = artIds
+      .map((id) => artById.get(id))
+      .filter((a): a is ArtRow => !!a && a.date_start != null)
+      .map((a) => ({
+        id: a.id,
+        date_start: a.date_start!,
+        artist_title: a.artist_title,
       }));
-    summary[canonical] = {
-      edges: outbound,
-      periods: periodRows.filter((p) => p.term_id === src.id).length,
-    };
+    const periods = computeTermPeriods(t.id, dated);
+    if (!periods.length) continue;
+    const payload = periods.map((p) => ({
+      term_id: t.id,
+      period_index: p.period_index,
+      label: p.label,
+      begin_year: p.begin_year,
+      end_year: p.end_year,
+      work_count: p.work_count,
+      featured_artwork_ids: p.featured_artwork_ids,
+    }));
+    const { error } = await supabase.from("term_periods").upsert(payload, {
+      onConflict: "term_id,period_index",
+    });
+    if (error) throw error;
+    periodRows += payload.length;
+  }
+  console.log(`periods=${periodRows}`);
+
+  for (const slug of LAUNCH) {
+    const t = termMeta.find((x) => x.slug === slug);
+    const { count } = await supabase
+      .from("term_connections")
+      .select("*", { count: "exact", head: true })
+      .eq("source_term_id", t?.id ?? "");
+    console.log(`launch ${slug}: status=${t?.status} edges=${count}`);
   }
 
   await writeFile(
     path.join(DATA, "connections-summary.json"),
-    JSON.stringify(
-      { edge_count: edges.length, period_count: periodRows.length, launch: summary },
-      null,
-      2,
-    ),
+    JSON.stringify({ edges: edges.length, periods: periodRows }, null, 2),
   );
-  console.log(JSON.stringify(summary, null, 2));
 }
 
-main().catch((err) => {
-  console.error(err);
+main().catch((e) => {
+  console.error(e);
   process.exit(1);
 });
