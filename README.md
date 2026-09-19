@@ -48,7 +48,16 @@ INGEST_ENRICH_ONLY=1 npm run ingest   # enrich IDs via api.artic.edu → enriche
 # Requires SUPABASE_SERVICE_ROLE_KEY:
 npm run ingest:load-cache        # upsert artworks/terms + validate statuses
 npm run ingest:connections       # term_connections + term_periods
+npm run ingest:images            # mirror IIIF 843px JPEGs → Supabase Storage `iiif/`
 ```
+
+Images are **not** hotlinked from artic.edu at runtime (Cloudflare often blocks embeds). They are mirrored once via GitHub Actions into public Storage and served from there.
+
+### Mirror images (GitHub Actions)
+
+1. Add repository secrets: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+2. Actions → **Mirror AIC IIIF images** → Run workflow
+3. The job scrapes AIC IIIF one-at-a-time (~1s delay, `/full/843,/0/default.jpg`) and uploads `iiif/{image_id}/843.jpg`
 
 Getting-started files are sparse (no subjects/images/PD). The pipeline uses them as an ID universe, then enriches from the live API. See `data/aic/README.md` and `docs/content-audit.md`.
 
@@ -64,7 +73,7 @@ Getting-started files are sparse (no subjects/images/PD). The pipeline uses them
 
 - Next.js App Router + TypeScript
 - Supabase Postgres (subject index)
-- Art Institute of Chicago API + IIIF images
+- Art Institute of Chicago API + mirrored IIIF images (Supabase Storage)
 - Vitest
 
 See `BUILD_LOG.md` for decisions and verification.

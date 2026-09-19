@@ -16,7 +16,7 @@ Launch source: **Art Institute of Chicago** (official data dump + live API for b
 | Museum | [Art Institute of Chicago API](https://api.artic.edu/docs/) |
 | Bulk data | Official dump via [api-data](https://github.com/art-institute-of-chicago/api-data) → `https://artic-api-data.s3.amazonaws.com/artic-api-data.tar.bz2` (not paginated API scraping) |
 | Live API base | `https://api.artic.edu/api/v1` — detail refresh / fallback only; throttle ~1 req/s if used for more than single-record refresh |
-| Images | IIIF from `https://www.artic.edu/iiif/2/{image_id}/…`; no image binaries in Supabase Storage |
+| Images | Mirrored IIIF 843px JPEGs in Supabase Storage `iiif/{image_id}/843.jpg` (scraped per AIC guidelines via GitHub Actions; not hotlinked at runtime due to Cloudflare) |
 | Eligibility | `is_public_domain === true`, usable `image_id` + dimensions, dated record, exact term evidence in `subject_titles` / `term_titles` |
 | Index | Supabase: `artworks`, `terms`, `artwork_terms`, `term_connections`, `ingestion_runs`, `term_periods` |
 | Launch subjects | ≥3 journey-ready terms **discovered from the dump** after validation (not a hardcoded Met-style ID menu) |
@@ -41,7 +41,7 @@ Names can change; document the implemented contracts in the README.
 | `GET /api/artworks?terms=` | Intersection / detail lists for shared works. |
 | `GET /api/artworks/{id}` | Single artwork; optional live AIC refresh with cache. |
 
-UI components call these routes, not the museum API or the Supabase service role. Image requests go to AIC IIIF.
+UI components call these routes, not the museum API or the Supabase service role. Image requests go to public Supabase Storage (mirrored IIIF).
 
 ## Phase 1. Supabase + Ingest
 

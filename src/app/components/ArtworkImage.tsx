@@ -24,7 +24,14 @@ export default function ArtworkImage({
   const [failed, setFailed] = useState(false);
   const ratio = aspectRatio(width, height) ?? 0.8;
 
-  if (!imageId || failed) {
+  const src =
+    imageId && !failed
+      ? large
+        ? iiifLarge(imageId)
+        : iiifThumb(imageId)
+      : null;
+
+  if (!src) {
     return (
       <div
         className={`${styles.imageFallback} ${className ?? ""}`}
@@ -37,7 +44,6 @@ export default function ArtworkImage({
     );
   }
 
-  const src = large ? iiifLarge(imageId) : iiifThumb(imageId);
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img

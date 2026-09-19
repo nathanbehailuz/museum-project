@@ -136,6 +136,7 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Put `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` before re-running ingest (anon write policies revoked).
 - Met exhibition-maker code remains under `src/app` API/gallery files but is unused by the home route.
 - Preview deployments may have Vercel SSO; production alias is public.
+- Runtime images require the `iiif` Storage mirror (`npm run ingest:images` / GitHub Action); until that job succeeds, UI shows “Image unavailable”.
 
 ## Time spent
 
@@ -153,6 +154,13 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Total | ~12–14.5 h | Through AIC Phase 3 |
 
 ## Session notes
+
+### 2026-09-19 (IIIF mirror → Supabase Storage)
+
+- Cloudflare blocks artic.edu IIIF hotlinks (and Vercel upstream fetch). AIC docs allow polite scrape when storing locally.
+- Rewrote `scripts/ingest/images.ts` (fetch `/full/843,/0/default.jpg`, 1s delay, upload `iiif/{id}/843.jpg`); no Playwright.
+- Added `.github/workflows/mirror-iiif.yml` (`workflow_dispatch` + weekly). UI `ArtworkImage` loads public Storage URLs.
+- Removed `/api/iiif` proxy route. Documented secrets + workflow in README.
 
 ### 2026-09-19 (Phase 3 — UI on indexed data)
 

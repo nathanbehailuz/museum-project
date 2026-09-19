@@ -12,7 +12,8 @@
     "ingest:download": "tsx scripts/ingest/download.ts",
     "ingest": "tsx scripts/ingest/run.ts",
     "ingest:load-cache": "tsx scripts/ingest/load-cache.ts",
-    "ingest:connections": "tsx scripts/ingest/compute-connections.ts"
+    "ingest:connections": "tsx scripts/ingest/compute-connections.ts",
+    "ingest:images": "tsx scripts/ingest/images.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
