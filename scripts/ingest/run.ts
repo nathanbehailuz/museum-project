@@ -2,8 +2,8 @@
  * Met Subject Museum ingest (assessment slice).
  * Searches Met /v1.1 for launch tags, fetches objects, upserts artworks + terms.
  *
- * image_id column stores the JPEG URL (Met primaryImageSmall) until image_url
- * migration is applied. See supabase/migrations/20260919140000_met_pivot.sql
+ * Writes Met JPEG URLs to image_url / image_url_small; image_id keeps the small
+ * (or full) URL as a fallback for older readers.
  *
  * Usage: npm run ingest
  */
@@ -133,7 +133,6 @@ async function main() {
     .single();
   if (runErr) throw runErr;
 
-  // Upsert artworks — JPEG URL in image_id for compatibility without DDL
   const artworkPayload = artworks.map((a) => ({
     source: "met",
     source_id: a.source_id,
@@ -144,6 +143,8 @@ async function main() {
     date_display: a.date_display,
     medium_display: a.medium_display,
     artwork_type_title: a.artwork_type_title,
+    image_url: a.image_url,
+    image_url_small: a.image_url_small,
     image_id: a.image_url_small || a.image_url,
     image_width: a.image_width,
     image_height: a.image_height,

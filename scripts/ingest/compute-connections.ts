@@ -55,6 +55,8 @@ async function main() {
     artist_title: string | null;
     is_public_domain: boolean;
     image_id: string | null;
+    image_url: string | null;
+    image_url_small: string | null;
   };
   type TermRow = {
     id: string;
@@ -64,15 +66,20 @@ async function main() {
     status: TermMeta["status"];
   };
 
+  const hasImage = (a: ArtRow) =>
+    !!(a.image_url_small || a.image_url || a.image_id);
+
   const artworks = await fetchAll<ArtRow>(() =>
     supabase
       .from("artworks")
-      .select("id, date_start, artist_title, is_public_domain, image_id")
+      .select(
+        "id, date_start, artist_title, is_public_domain, image_id, image_url, image_url_small",
+      )
       .eq("source", "met"),
   );
   const qualifying = new Set(
     artworks
-      .filter((a) => a.is_public_domain && a.image_id && a.date_start != null)
+      .filter((a) => a.is_public_domain && hasImage(a) && a.date_start != null)
       .map((a) => a.id),
   );
   const artById = new Map(artworks.map((a) => [a.id, a]));

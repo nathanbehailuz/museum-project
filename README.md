@@ -17,15 +17,41 @@ cp .env.example .env.local
 npm run dev
 ```
 
-## Met ingest
+## Met ingest & refresh
+
+No museum API key. Images are hotlinked Met JPEGs (`images.metmuseum.org`). Ingest/refresh need `SUPABASE_SERVICE_ROLE_KEY`.
 
 ```bash
-npm run ingest:download   # MetObjects.csv → data/met/ (optional bulk)
-npm run ingest            # load PD+image+tag slice into Supabase (API and/or CSV)
+npm run ingest:download   # optional: MetObjects.csv → data/met/
+npm run ingest            # search + load PD+image+tag slice into Supabase
+npm run ingest:refresh    # soft refresh: re-fetch existing Met object IDs
 npm run ingest:connections  # term_connections + term_periods
 ```
 
-No museum API key. Images are hotlinked Met JPEGs (`images.metmuseum.org`).
+### Soft refresh (default)
+
+Re-fetches live `/v1/objects/{id}` for rows already in the index (metadata + `image_url` / `image_url_small`). Does not rebuild terms.
+
+```bash
+npm run ingest:refresh
+npm run ingest:connections
+```
+
+### Expand the slice
+
+```bash
+MET_INGEST_QUERIES=flower,landscape,animal MET_INGEST_LIMIT=80 npm run ingest
+npm run ingest:connections
+```
+
+### Clean reload
+
+Destructive. In the Supabase SQL Editor, run the `TRUNCATE` from `supabase/migrations/20260919140000_met_pivot.sql`, then:
+
+```bash
+npm run ingest
+npm run ingest:connections
+```
 
 ## App routes
 
@@ -43,6 +69,6 @@ No museum API key. Images are hotlinked Met JPEGs (`images.metmuseum.org`).
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser + server |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser + server |
-| `SUPABASE_SERVICE_ROLE_KEY` | Ingest only |
+| `SUPABASE_SERVICE_ROLE_KEY` | Ingest / refresh only |
 
 See `BUILD_LOG.md` for verification.

@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "ingest:download": "tsx scripts/ingest/download.ts",
     "ingest": "tsx scripts/ingest/run.ts",
+    "ingest:refresh": "tsx scripts/ingest/refresh.ts",
     "ingest:connections": "tsx scripts/ingest/compute-connections.ts"
   },
   "dependencies": {

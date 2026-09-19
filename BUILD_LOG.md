@@ -136,7 +136,8 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Put `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` before re-running ingest (anon write policies revoked).
 - Met exhibition-maker code remains under `src/app` API/gallery files but is unused by the home route.
 - Preview deployments may have Vercel SSO; production alias is public.
-- Met pivot live DDL applied without TRUNCATE; existing rows may still hold JPEG URLs in `image_id` until a reload writes `image_url` / `image_url_small`.
+- Met pivot live DDL applied; soft refresh populates `image_url` / `image_url_small` (18/98 Met object fetches failed on last refresh — re-run `ingest:refresh` to backfill).
+- Soft refresh does not rebuild terms; use full `npm run ingest` (or clean TRUNCATE reload) to expand subjects.
 
 ## Time spent
 
@@ -149,11 +150,19 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Phase 1 AIC Supabase + getting-started ingest | ~2–2.5 h | Schema, enrich, validate, load |
 | Phase 2 connections + periods | ~0.5–1 h | Scoring module, script, verify |
 | Phase 3 UI on indexed data | ~2–2.5 h | BFF, search, journey/works/connections, deploy |
-| 4. Polish and verify | | |
-| 5. Release and document | | |
-| Total | ~12–14.5 h | Through AIC Phase 3 |
+| Phase 4 Met index refresh | ~0.5 h | Soft refresh script + docs; live smoke |
+| Total | ~12.5–15 h | Through Met Phase 4 |
 
 ## Session notes
+
+### 2026-09-19 (Phase 4 — Met index refresh)
+
+- Ingest upsert now writes `image_url` / `image_url_small` (keeps JPEG in `image_id` as fallback).
+- Added `npm run ingest:refresh` (`scripts/ingest/refresh.ts`) to re-fetch existing Met `source_id`s; records `ingestion_runs` with `source_version=api-v1-refresh`.
+- Connections eligibility accepts any of `image_url_small` / `image_url` / `image_id`.
+- Documented soft refresh / expand slice / clean-reload TRUNCATE paths in README + IMPLEMENTATION_PLAN (status: Phase 4 complete).
+- Verified soft refresh on live index: 98 Met rows → updated 80, fetchFailed 18, skipped 0; 80 rows with non-null `image_url`/`image_url_small`.
+- Re-ran `ingest:connections`: flower/landscape/animal remain `journey_ready` (edges 2/3/1; smaller graph after partial fetch failures). Production `/api/subjects/flower/journey` 200 with Met JPEG `imageUrl`.
 
 ### 2026-09-19 (apply Met pivot DDL live)
 
