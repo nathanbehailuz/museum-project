@@ -1,11 +1,21 @@
-# Build Log: Museum Exhibition Maker
+# Build Log: Subject Museum
 
 Assignment: Creative, API-Integrated Web App
-Related documents: [Project brief](docs/PROJECT_BRIEF.md), [PRD](docs/prd.md), [Implementation plan](docs/IMPLEMENTATION_PLAN.md), [Content audit](docs/content-audit.md)
+Related documents: [Project brief](docs/PROJECT_BRIEF.md), [PRD](docs/prd.md), [Implementation plan](docs/IMPLEMENTATION_PLAN.md) (Met exhibition phases — superseded for product scope), [Content audit](docs/content-audit.md) (historical Met pools)
 
 Working log at the repo root. Update after every meaningful change, not only at phase end. Do not claim unchecked work passed.
 
 ## Goal & scope decision
+
+**Current product (docs pivoted 2026-09-19):** a searchable digital museum. Visitor types a validated subject, follows a chronological Journey, browses All Works, explores Connections (catalog co-occurrence), inspects artworks, and shares URL state. Pitch: *Type a thing. See how artists have pictured it across time.*
+
+Primary source: Art Institute of Chicago official dump → normalize/validate → Supabase index; app reads the index via Next.js BFF; IIIF image URLs (no image binaries in Storage). Advanced features: ingest + validation + BFF; signature motion; shareable URL + server-backed autocomplete.
+
+Must ship: reproducible sample ingest, validation pipeline, ≥3 journey-ready subjects from data, Journey / All Works / Connections, shared inspection, shareable URLs, one signature transition, loading/empty/error states.
+
+**Previous direction (Phases 1–3 below, still live):** three-work Met exhibition maker (replace / reorder / title, `data/subjects.json` pools, no database). Production https://museum-exhibition-iota.vercel.app remains that product until the new stack ships. Implementation plan and content audit are historical until rewritten for AIC ingest.
+
+## Goal & scope decision (historical — Met exhibition maker)
 
 Building a small exhibition maker: a visitor opens a complete three-work show of everyday subjects in art, inspects works, replaces and reorders them, names the show, and shares a URL that reconstructs it.
 
@@ -23,13 +33,13 @@ Left out to keep the product small: accounts, database, private collections, mul
 
 ## Key decisions & trade-offs
 
-- Decision: switch from Art Institute of Chicago to The Met Collection API because it requires no key and exposes direct JPEG URLs. Alternative considered: keep AIC; rejected after product direction chose Met.
-- Decision: reviewed artwork ID pools plus live metadata, because keyword/tag search often matches catalog text without showing the subject, and Met `hasImages=true` does not guarantee open-access images. Alternative considered: live search-only; rejected for visual relevance.
-- Decision: BFF route handlers as the advanced feature, because the assessment needs a real client/server boundary, validation, cache, and upstream resilience. Alternative considered: client-only museum calls; rejected.
+- Decision (2026-09-19): pivot product from Met three-work exhibition maker to AIC dump–indexed subject museum (Journey / All Works / Connections) with Supabase. Alternative considered: finish Met Phase 4–5 then expand; rejected because the assessment story and data model are a different product. Docs updated first; code still Met until ingest phase.
+- Decision: switch from Art Institute of Chicago to The Met Collection API because it requires no key and exposes direct JPEG URLs. Alternative considered: keep AIC; rejected after product direction chose Met. **Superseded by 2026-09-19 pivot back to AIC dump + Supabase.**
+- Decision: reviewed artwork ID pools plus live metadata, because keyword/tag search often matches catalog text without showing the subject, and Met `hasImages=true` does not guarantee open-access images. Alternative considered: live search-only; rejected for visual relevance. **Historical for Met maker; new product uses dump validation + status bands instead.**
+- Decision: BFF route handlers as the advanced feature, because the assessment needs a real client/server boundary, validation, cache, and upstream resilience. Alternative considered: client-only museum calls; rejected. **Still true; BFF now centers on ingest + index + serve.**
 - Decision: shareable URL as source of truth, no required local storage or accounts. Alternative considered: save exhibitions server-side; out of scope.
-- Decision: default subject `windows` with nine Met object IDs; default exhibition `[9817, 14808, 453573]`. Config in `data/subjects.json`.
-- Decision: Phase 2 exhibition deadline ~25s total / ~20s per object (parallel). Locked ~8s was too aggressive for Met cold starts; full B05 retry/backoff stays Phase 3.
-- Decision: cache successful normalized metadata for 1 hour on Vercel (implement in Phase 3); never cache failures as success.
+- Decision: default subject `windows` with nine Met object IDs; default exhibition `[9817, 14808, 453573]`. Config in `data/subjects.json`. **Historical Met launch config.**
+- Decision: Phase 2/3 exhibition deadline ~25s total / ~20s per object (parallel). Successful Met metadata cached 1 hour via Next `fetch` `revalidate`; failures never cached as success; at most two retries on network/429/5xx.
 - Decision: use `/public/collection/v1.1/search` now; `/v1/search` retires 1 Oct 2026.
 
 ## Hard parts / dead ends
@@ -47,8 +57,8 @@ Phase test cases live in the implementation plan. Record pass/fail and gaps here
 | Phase | Status | Result |
 | --- | --- | --- |
 | 1. Confirm scope and content | Complete | P1-1–P1-4 passed. Met live audit; `windows` locked with 9 IDs; decisions recorded; docs retargeted off AIC. |
-| 2. Vertical slice and first deploy | Complete | Next.js gallery + `/api/exhibitions`; Vitest 8/8; production https://museum-exhibition-iota.vercel.app shows three live Windows works. |
-| 3. Curation, inspection, and sharing | Not started | |
+| 2. Vertical slice and first deploy | Complete | Next.js gallery + `/api/exhibitions`; Vitest; production https://museum-exhibition-iota.vercel.app shows three live Windows works. |
+| 3. Curation, inspection, and sharing | Complete | Artworks/replacements APIs; chairs subject; URL share state; inspect modal; replace/reorder/title; cache+retry; Vitest 17; redeployed. |
 | 4. Polish and verify | Not started | |
 | 5. Release and document | Not started | |
 
@@ -78,12 +88,33 @@ Phase test cases live in the implementation plan. Record pass/fail and gaps here
 
 Live URL: https://museum-exhibition-iota.vercel.app
 
+### Phase 3 test results
+
+| ID | Result | Notes |
+| --- | --- | --- |
+| P3-1 | Pass | Replace via `/api/replacements` excludes current IDs; UI keeps title |
+| P3-2 | Pass | `pendingReplace` lock; failed replace leaves slot unchanged |
+| P3-3 | Pass | Move left/right (up/down on mobile); ends disabled |
+| P3-4 | Pass | Vitest `commitTitle` + 80-char clamp; input is plain text |
+| P3-5 | Pass | Inspection modal: primary image, medium, Met link, focus trap, Escape |
+| P3-6 | Pass | `?subject=&ids=&title=`; production reconstructs Soft Glass share |
+| P3-7 | Pass | Clipboard failure shows selectable textarea; success live region |
+| P3-8 | Pass | Subject change `pushState`; title/curate `replaceState`; popstate reload |
+| P3-9 | Pass | Vitest URL parse rejects bad subject/ids/dupes/long title; UI recovery |
+| P3-10 | Pass | `/api/artworks` per-slot unavailable; UI Replace/Reset |
+| P3-11 | Pass | Chairs published; subject select loads Chairs defaults |
+| P3-12 | Pass | Next fetch `revalidate: 3600` on success; tests force `no-store` |
+| P3-13 | Pass | Vitest: retry 503/429, no retry on 404, Retry-After honored |
+| P3-14 | Pass | Deployed smoke on iota alias + shared URL |
+
 ## Known limitations
 
-- Only one published subject so far (`windows`). Chairs and bowls look viable; hands needs more eligible IDs.
-- Met object latency can still make the first load feel slow; Phase 3 caching not implemented yet.
-- No curation, share URL, inspection, or subject switching yet (Phase 3).
-- Full README polish still Phase 5; Phase 2 README covers local setup and no-env note only.
+- Product docs pivoted to AIC + Supabase subject museum; app code and live deploy are still the Met exhibition maker until ingest/UI phases run.
+- `docs/IMPLEMENTATION_PLAN.md` still describes Met Phases 1–5; needs rewrite before coding new ingest.
+- Signature inspection motion still Phase 4 (Met plan); modal opens without FLIP.
+- Image-unavailable / rapid subject cancel polish still Phase 4 (Met plan).
+- Bowls/hands not published yet (Met pools).
+- Full README polish still Phase 5 (Met plan); README still describes Met exhibition maker.
 
 ## Time spent
 
@@ -91,12 +122,19 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | --- | --- | --- |
 | 1. Confirm scope and content | ~1.5–2 h | Docs earlier; Met audit, visual review, config, doc retarget |
 | 2. Vertical slice and first deploy | ~2–2.5 h | Scaffold, BFF, gallery, tests, Vercel deploy friction |
-| 3. Curation, inspection, and sharing | | |
+| 3. Curation, inspection, and sharing | ~2–2.5 h | Chairs, URL state, APIs, curation UI, inspect/share, redeploy |
 | 4. Polish and verify | | |
 | 5. Release and document | | |
-| Total | ~3.5–4.5 h | Through Phase 2 |
+| Total | ~5.5–7 h | Through Phase 3 |
 
 ## Session notes
+
+### 2026-09-19 (product pivot — docs only)
+
+- Replaced `docs/PROJECT_BRIEF.md` and `docs/prd.md` with the searchable subject-museum concept: AIC dump → Supabase (`artworks`, `terms`, `artwork_terms`, `term_connections`, `ingestion_runs`, `term_periods`); core pages Journey / All Works / Connections; validation bands; shareable URL state.
+- PRD milestones recast as: (1) Supabase + ingest, (2) compute connections, (3) UI on indexed data, (4) index-as-cache refresh. Functional IDs F01–F11 and backend IDs B01–B09 replace the Met exhibition-maker requirements.
+- Explicitly marked Met three-work maker as previous direction. Live app and code unchanged. `docs/IMPLEMENTATION_PLAN.md`, `docs/content-audit.md`, and `data/subjects.json` not rewritten in this pass — treat as superseded for product scope until AIC ingest work begins.
+- Verified: documentation only. No schema, ingest script, or UI changes. New app not claimed implemented.
 
 ### 2026-09-18
 
@@ -114,3 +152,10 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - `npm test` 8/8; `npm run build` OK.
 - Deployed to Vercel production: https://museum-exhibition-iota.vercel.app (also deployment URL `museum-exhibition-5x03uqhqb-natecodes-projects.vercel.app`).
 - Production smoke: three Windows works (9817, 14808, 453573); invalid subject rejected.
+
+### 2026-09-19 (Phase 3)
+
+- Published chairs (9 Met IDs; default 221/230/269).
+- Added `/api/artworks`, `/api/replacements`, URL state module, Met cache (`revalidate: 3600`) + retry/backoff.
+- Gallery: subject switch, title edit, replace, reorder, copy link, inspection modal, invalid/partial recovery.
+- Vitest 17 passing; redeployed production https://museum-exhibition-iota.vercel.app; shared URL title reconstructs.
