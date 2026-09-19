@@ -1,6 +1,6 @@
 # Implementation Plan: Subject Museum
 
-Status: Phase 1 complete (getting-started sample ingest + validation) — ready for Phase 2 (connections)
+Status: Phase 2 complete — ready for Phase 3 (UI on indexed data)
 Related documents: [Project brief](PROJECT_BRIEF.md), [PRD](prd.md), [Content audit](content-audit.md)
 
 This document is the build order and phase gate list. The PRD stays the product contract: what must be true. Do not copy task lists back into the PRD.
@@ -73,7 +73,7 @@ UI components call these routes, not the museum API or the Supabase service role
 
 **Exit:** `term_connections` populated for launch subjects; edges verifiable against shared artwork IDs; generics/aliases do not dominate.
 
-**Status:** Not started.
+**Status:** Complete (2026-09-19). 786 directed edges; `term_periods` 881 rows. Launch subjects flower / landscape / animal each have 8 outbound connections with `shared_work_count >= 3`. Run via `npm run ingest:connections`.
 
 ### Build, in order
 

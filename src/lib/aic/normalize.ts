@@ -168,6 +168,10 @@ export function slugifyTerm(canonical: string): string {
     .slice(0, 80);
 }
 
+export function isGenericCanonical(canonical: string): boolean {
+  return GENERIC.has(canonical);
+}
+
 export function isLanguageRejected(canonical: string): string | null {
   if (!canonical) return "empty_after_normalize";
   if (/^\d+$/.test(canonical)) return "numeric_only";

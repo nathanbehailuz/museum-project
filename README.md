@@ -27,6 +27,7 @@ npm run ingest:download          # allArtworks.jsonl + someArtworks.csv → data
 INGEST_ENRICH_ONLY=1 npm run ingest   # enrich IDs via api.artic.edu → enriched-cache.json
 # Requires SUPABASE_SERVICE_ROLE_KEY:
 npm run ingest:load-cache        # upsert artworks/terms + validate statuses
+npm run ingest:connections       # term_connections + term_periods
 ```
 
 Getting-started files are sparse (no subjects/images/PD). The pipeline uses them as an ID universe, then enriches from the live API. See `data/aic/README.md` and `docs/content-audit.md`.

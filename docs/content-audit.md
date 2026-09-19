@@ -50,6 +50,18 @@ Preferred everyday / visual subjects discovered from this slice (all hard requir
 
 Launch review target for UI: **flower**, **landscape**, **animal** (or vessel/tree as alternates). Manual ≥80% relevance sample still pending (Phase 1 exit P1-5 partial — candidates listed; visual review not finished).
 
+## Connections (Phase 2)
+
+Computed with `npm run ingest:connections` (cosine score, min 3 shared qualifying works, top 8 outbound per journey_ready term). Generics/aliases excluded.
+
+| Source | Outbound edges | Example targets (by score) | Periods |
+| --- | --- | --- | --- |
+| flower | 8 | silk textile, foliage, plant, bird, … | 14 |
+| landscape | 8 | tree, weather season, sky, cloud, water, … | 11 |
+| animal | 8 | bird, horse, tree, dog, landscape, … | 23 |
+
+Verified: all launch edges have `shared_work_count >= 3`; sample artwork IDs for flower↔foliage are a true intersection (5/5).
+
 ## Relevance review (launch subjects)
 
 | Subject | Sample size | Pass rate | Result | Notes |

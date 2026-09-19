@@ -131,11 +131,19 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | 3. Curation, inspection, and sharing (Met) | ~2–2.5 h | Historical |
 | Docs pivot + AIC retarget | ~1 h | Brief/PRD/plan |
 | Phase 1 AIC Supabase + getting-started ingest | ~2–2.5 h | Schema, enrich, validate, load |
+| Phase 2 connections + periods | ~0.5–1 h | Scoring module, script, verify |
 | 4. Polish and verify | | |
 | 5. Release and document | | |
-| Total | ~9–11 h | Through AIC Phase 1 |
+| Total | ~10–12 h | Through AIC Phase 2 |
 
 ## Session notes
+
+### 2026-09-19 (Phase 2 — term connections + periods)
+
+- Added `src/lib/aic/connections.ts` + `periods.ts` with Vitest coverage; script `npm run ingest:connections`.
+- Loaded qualifying artwork_terms (PD + image + dated); cosine co-occurrence; min 3 shared; top 8 per journey_ready source; generics/aliases dropped.
+- Upserted 786 `term_connections` and 881 `term_periods` rows. Launch subjects flower/landscape/animal each have 8 edges; SQL confirmed min shared ≥ 3 and sample IDs in intersection.
+- Verified: unit tests; Supabase spot-checks. UI for Connections still Phase 3.
 
 ### 2026-09-19 (Phase 1 — Supabase + getting-started ingest)
 

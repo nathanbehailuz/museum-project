@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "ingest:download": "tsx scripts/ingest/download.ts",
     "ingest": "tsx scripts/ingest/run.ts",
-    "ingest:load-cache": "tsx scripts/ingest/load-cache.ts"
+    "ingest:load-cache": "tsx scripts/ingest/load-cache.ts",
+    "ingest:connections": "tsx scripts/ingest/compute-connections.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
