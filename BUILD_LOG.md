@@ -139,6 +139,7 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Met pivot live DDL applied; soft refresh populates `image_url` / `image_url_small` (18/98 Met object fetches failed on last refresh — re-run `ingest:refresh` to backfill).
 - Soft refresh does not rebuild terms; use full `npm run ingest` (or clean TRUNCATE reload) to expand subjects.
 - **Full Met CSV enrich parked:** 139,568 eligible IDs, checkpoint ~480 done; Incapsula 403 forces concurrency 1 and multi-day runtime. Details + resume steps: [docs/parked-met-csv-load.md](docs/parked-met-csv-load.md). Ship on partial/API-slice index.
+- Subject UI is two pages only (chronological constellation + connections graph); All Works route redirects to journey.
 
 ## Time spent
 
@@ -155,6 +156,17 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Total | ~12.5–15 h | Through Met Phase 4 |
 
 ## Session notes
+
+### 2026-09-19 (Two-page constellation UI)
+
+- Replaced three-view light UI with dark archival shell (EB Garamond / Manrope / JetBrains Mono; gold on charcoal tokens from design mocks).
+- Page 1: `ChronologyConstellation` on `/subject/[slug]/journey` — featured period works as dated nodes + SVG chronological edges; epoch scrubber; live compare chips from `term_connections`; `?artwork=` inspection focus.
+- Page 2: hub-and-spoke `ConnectionsView` on `/connections` — related subjects with sample images and shared-count edge labels.
+- Dropped All Works from nav; `/works` redirects to journey. `getArtworksByIds` selects `image_url` / `image_url_small`.
+- Verified: `npm test` 29/29; `npm run build` OK; local smoke flower/landscape/animal journey+connections 200; flower journey API 6 chapters / 18 featured with Met `imageUrl`; connections edges present; HTML includes Chronological Journey / Subject lens / Current subject.
+- Layout fix: constellation sizes to the viewport and spreads nodes by chronological rank with min-gap + overlap separation so tight date clusters (e.g. 1800–1849) no longer pile on the left.
+- Removed chronological edge labels (shared medium/type text on paths).
+- Chrome cleanup: epochs moved to bottom footer; removed compare chips / “X plotted” / header subtitle+stats; subject title lives in the canvas banner; search suggestions no longer open on reload.
 
 ### 2026-09-19 (Park full Met CSV load)
 

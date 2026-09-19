@@ -32,11 +32,12 @@ async function FlowerTeaser() {
 
     return (
       <section className={styles.teaser} aria-labelledby="teaser-heading">
+        <p className={styles.eyebrow}>Start here</p>
         <h2 id="teaser-heading" className={styles.chapterLabel}>
-          Start with flower
+          Flower across time
         </h2>
         <p className={styles.muted}>
-          A chronological journey through {term.qualifying_work_count} works
+          A chronological constellation of {term.qualifying_work_count} works
           {term.date_min != null && term.date_max != null
             ? ` spanning ${term.date_min}–${term.date_max}`
             : ""}
@@ -57,9 +58,9 @@ async function FlowerTeaser() {
         </div>
         <Link
           href={subjectPath("flower", "journey")}
-          className={styles.button}
+          className={`${styles.button} ${styles.buttonPrimary}`}
         >
-          Open the flower journey
+          Open chronological journey
         </Link>
       </section>
     );
@@ -75,18 +76,20 @@ async function FlowerTeaser() {
 export default function HomePage() {
   return (
     <main className={styles.page}>
-      <p className={styles.searchLabel}>The Metropolitan Museum of Art</p>
-      <h1 className={styles.brand}>Subject museum</h1>
-      <p className={styles.lede}>
-        Search a subject, then follow its journey through time, browse every
-        work, or see what else in the collection shares its company.
-      </p>
-      <Suspense fallback={<p className={styles.muted}>Loading search…</p>}>
-        <SubjectSearch autofocus />
-      </Suspense>
-      <Suspense fallback={null}>
-        <FlowerTeaser />
-      </Suspense>
+      <div className={styles.pageInner}>
+        <p className={styles.eyebrow}>The Metropolitan Museum of Art</p>
+        <h1 className={styles.brand}>Subject museum</h1>
+        <p className={styles.lede}>
+          Type a thing. See how artists have pictured it across time — then
+          explore what else in the catalog shares its company.
+        </p>
+        <Suspense fallback={<p className={styles.muted}>Loading search…</p>}>
+          <SubjectSearch autofocus />
+        </Suspense>
+        <Suspense fallback={null}>
+          <FlowerTeaser />
+        </Suspense>
+      </div>
     </main>
   );
 }

@@ -8,7 +8,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { SubjectSummary } from "@/lib/aic/apiTypes";
+import type { JourneyChapter, SubjectSummary } from "@/lib/aic/apiTypes";
 import { subjectPath, type SubjectView } from "@/lib/subjectUrlState";
 import SubjectInspection from "./SubjectInspection";
 import SubjectSearch from "./SubjectSearch";
@@ -28,21 +28,33 @@ export function useOpenArtwork() {
 
 type Props = {
   subject: SubjectSummary;
+  epochs?: Pick<
+    JourneyChapter,
+    "periodIndex" | "label" | "beginYear" | "endYear"
+  >[];
   children: React.ReactNode;
 };
 
-export default function SubjectShell({ subject, children }: Props) {
+function formatYearSpan(min: number | null, max: number | null): string {
+  if (min == null || max == null) return "";
+  return `${min}–${max}`;
+}
+
+export default function SubjectShell({ subject, epochs = [], children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const artwork = searchParams.get("artwork");
+  const chapterRaw = searchParams.get("chapter");
+  const activeChapter =
+    chapterRaw != null && chapterRaw !== ""
+      ? Number.parseInt(chapterRaw, 10)
+      : null;
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const view: SubjectView = pathname.includes("/connections")
     ? "connections"
-    : pathname.includes("/works")
-      ? "works"
-      : "journey";
+    : "journey";
 
   const closeInspection = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -71,55 +83,93 @@ export default function SubjectShell({ subject, children }: Props) {
         alert("Link copied");
       }
     } catch {
-      /* user cancelled */
+      /* cancelled */
     }
   }, [subject.displayLabel]);
 
+  const span = formatYearSpan(subject.dateMin, subject.dateMax);
+  const showEpochs = view === "journey" && epochs.length > 0;
+
   return (
-    <div className={styles.page}>
-      <SubjectSearch />
-      <header className={styles.headerBar}>
-        <div>
-          <h1 className={styles.subjectTitle}>{subject.displayLabel}</h1>
-          <p className={styles.subjectMeta}>
-            {subject.qualifyingWorkCount} works
-            {subject.dateMin != null && subject.dateMax != null
-              ? ` · ${subject.dateMin}–${subject.dateMax}`
-              : ""}
-            {subject.status === "browse_only" ? " · browse only" : ""}
-          </p>
-        </div>
-        <div className={styles.actions}>
-          <nav className={styles.switcher} aria-label="Subject views">
-            {subject.status === "journey_ready" && (
+    <div className={styles.shell}>
+      <header className={styles.shellHeader}>
+        <div className={styles.shellHeaderInner}>
+          <div className={styles.shellTopRow}>
+            <div className={styles.shellBrandBlock}>
+              <p className={styles.shellBrand}>The Met Archive</p>
+            </div>
+
+            <nav className={styles.shellNav} aria-label="Subject views">
               <Link
                 href={subjectPath(subject.slug, "journey")}
+                className={styles.shellNavLink}
                 aria-current={view === "journey" ? "page" : undefined}
               >
-                Journey
+                Chronological Journey
               </Link>
-            )}
-            <Link
-              href={subjectPath(subject.slug, "works")}
-              aria-current={view === "works" ? "page" : undefined}
-            >
-              All Works
-            </Link>
-            <Link
-              href={subjectPath(subject.slug, "connections")}
-              aria-current={view === "connections" ? "page" : undefined}
-            >
-              Connections
-            </Link>
-          </nav>
-          <button type="button" className={styles.button} onClick={share}>
-            Share
-          </button>
+              <Link
+                href={subjectPath(subject.slug, "connections")}
+                className={styles.shellNavLink}
+                aria-current={view === "connections" ? "page" : undefined}
+              >
+                Object Connections Graph
+              </Link>
+            </nav>
+
+            <div className={styles.shellActions}>
+              <SubjectSearch compact />
+              <button type="button" className={styles.button} onClick={share}>
+                Share
+              </button>
+            </div>
+          </div>
         </div>
       </header>
-      <SubjectOpenContext.Provider value={openArtwork}>
-        {children}
-      </SubjectOpenContext.Provider>
+
+      <div className={styles.shellMain}>
+        <SubjectOpenContext.Provider value={openArtwork}>
+          {children}
+        </SubjectOpenContext.Provider>
+      </div>
+
+      {showEpochs && (
+        <footer className={styles.epochFooter} aria-label="Epochs">
+          <div className={styles.epochStrip}>
+            <span className={styles.epochLabel}>
+              Epochs
+              {span ? ` (${span})` : ""}
+            </span>
+            <Link
+              href={subjectPath(subject.slug, "journey")}
+              className={styles.epochBtn}
+              aria-current={
+                activeChapter == null || Number.isNaN(activeChapter)
+                  ? "page"
+                  : undefined
+              }
+            >
+              All
+            </Link>
+            {epochs.map((ep) => (
+              <Link
+                key={ep.periodIndex}
+                href={subjectPath(subject.slug, "journey", {
+                  chapter: ep.periodIndex,
+                })}
+                className={styles.epochBtn}
+                aria-current={
+                  activeChapter === ep.periodIndex ? "page" : undefined
+                }
+              >
+                {ep.beginYear != null && ep.endYear != null
+                  ? `${ep.beginYear} – ${ep.endYear}`
+                  : ep.label}
+              </Link>
+            ))}
+          </div>
+        </footer>
+      )}
+
       {artwork && (
         <SubjectInspection
           sourceId={artwork}

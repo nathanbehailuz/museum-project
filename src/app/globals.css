@@ -1,15 +1,33 @@
 :root {
-  --bg: #f3f1ec;
-  --bg-accent: #e8e4dc;
-  --ink: #1c1a17;
-  --ink-muted: #5c574e;
-  --rule: #d4cfc4;
-  --skeleton: #ddd8ce;
-  --skeleton-shine: #ebe7df;
-  --error: #7a2e2e;
-  --focus: #2a4a6b;
-  --font-display: "Fraunces", "Palatino Linotype", Palatino, serif;
-  --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
+  --surface: #111317;
+  --surface-low: #1a1c1f;
+  --surface-container: #1e2023;
+  --surface-high: #282a2d;
+  --surface-highest: #333538;
+  --surface-lowest: #0c0e11;
+  --on-surface: #e2e2e6;
+  --on-surface-variant: #d0c5af;
+  --outline: #99907c;
+  --outline-variant: #4d4635;
+  --primary: #f2ca50;
+  --primary-container: #d4af37;
+  --on-primary: #3c2f00;
+  --on-primary-container: #554300;
+  --secondary: #ffb691;
+  --tertiary: #d6ceb9;
+  --error: #ffb4ab;
+  --focus: #f2ca50;
+  --font-display: "EB Garamond", "Palatino Linotype", Palatino, serif;
+  --font-sans: "Manrope", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Legacy aliases used by remaining components */
+  --bg: var(--surface);
+  --bg-accent: var(--surface-low);
+  --ink: var(--on-surface);
+  --ink-muted: var(--on-surface-variant);
+  --rule: var(--outline-variant);
+  --skeleton: var(--surface-high);
+  --skeleton-shine: var(--surface-highest);
 }
 
 *,
@@ -26,11 +44,8 @@ body {
 
 body {
   font-family: var(--font-sans);
-  color: var(--ink);
-  background:
-    radial-gradient(ellipse 120% 80% at 10% -10%, #fff8ee 0%, transparent 55%),
-    radial-gradient(ellipse 90% 60% at 100% 0%, #e4ebe8 0%, transparent 50%),
-    var(--bg);
+  color: var(--on-surface);
+  background: var(--surface);
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
@@ -42,4 +57,9 @@ body {
 
 a {
   color: inherit;
+}
+
+::selection {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
 }

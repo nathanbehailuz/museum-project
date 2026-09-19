@@ -134,7 +134,7 @@ export async function getArtworksByIds(ids: string[]) {
   const { data, error } = await supabase
     .from("artworks")
     .select(
-      "id, source_id, title, artist_title, date_display, date_start, medium_display, artwork_type_title, image_id, image_width, image_height, alt_text, source_url",
+      "id, source_id, title, artist_title, date_display, date_start, medium_display, artwork_type_title, image_id, image_url, image_url_small, image_width, image_height, alt_text, source_url",
     )
     .in("id", ids);
   if (error) throw error;
@@ -146,7 +146,7 @@ export async function getArtworkBySourceId(sourceId: string) {
   const { data, error } = await supabase
     .from("artworks")
     .select(
-      "id, source_id, title, artist_title, date_display, date_start, medium_display, artwork_type_title, image_id, image_width, image_height, alt_text, source_url, subject_titles, term_titles",
+      "id, source_id, title, artist_title, date_display, date_start, medium_display, artwork_type_title, image_id, image_url, image_url_small, image_width, image_height, alt_text, source_url, subject_titles, term_titles",
     )
     .eq("source", "met")
     .eq("source_id", sourceId)

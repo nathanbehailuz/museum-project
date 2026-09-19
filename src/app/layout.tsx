@@ -1,23 +1,29 @@
 import type { Metadata } from "next";
-import { Fraunces, Source_Sans_3 } from "next/font/google";
+import { EB_Garamond, JetBrains_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 
-const display = Fraunces({
+const display = EB_Garamond({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
 });
 
-const sans = Source_Sans_3({
+const sans = Manrope({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Subject museum · The Met",
   description:
-    "Search a subject, follow its journey through time, browse works, and explore connections in The Met collection.",
+    "Search a subject, follow it through time, and explore catalog connections in The Met collection.",
 };
 
 export default function RootLayout({
@@ -27,7 +33,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${sans.variable}`}>{children}</body>
+      <body
+        className={`${display.variable} ${sans.variable} ${mono.variable}`}
+      >
+        {children}
+      </body>
     </html>
   );
 }

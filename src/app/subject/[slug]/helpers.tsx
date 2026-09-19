@@ -10,7 +10,7 @@ type Props = {
 export function SuggestionList({ suggestions }: Props) {
   if (!suggestions.length) return null;
   return (
-    <ul className={styles.connList}>
+    <ul className={styles.suggestionList}>
       {suggestions.map((s) => (
         <li key={s.slug}>
           <Link href={subjectPath(s.slug, "journey")}>

@@ -9,9 +9,14 @@ import styles from "./museum.module.css";
 type Props = {
   initialQuery?: string;
   autofocus?: boolean;
+  compact?: boolean;
 };
 
-export default function SubjectSearch({ initialQuery = "", autofocus }: Props) {
+export default function SubjectSearch({
+  initialQuery = "",
+  autofocus,
+  compact = false,
+}: Props) {
   const router = useRouter();
   const [q, setQ] = useState(initialQuery);
   const [results, setResults] = useState<SubjectSummary[]>([]);
@@ -29,13 +34,21 @@ export default function SubjectSearch({ initialQuery = "", autofocus }: Props) {
         .then((json) => {
           setResults(json.results ?? []);
           setActiveIndex(-1);
-          setOpen(true);
+          // Only open the list after the user is interacting with search.
+          if (
+            document.activeElement ===
+            document.getElementById(
+              compact ? "subject-search-compact" : "subject-search",
+            )
+          ) {
+            setOpen(true);
+          }
         })
         .catch(() => setResults([]))
         .finally(() => setLoading(false));
     }, 220);
     return () => clearTimeout(handle);
-  }, [q]);
+  }, [q, compact]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -48,23 +61,37 @@ export default function SubjectSearch({ initialQuery = "", autofocus }: Props) {
   const go = useCallback(
     (subject: SubjectSummary) => {
       setOpen(false);
-      if (subject.status === "journey_ready") {
-        router.push(subjectPath(subject.slug, "journey"));
-      } else {
-        router.push(subjectPath(subject.slug, "works"));
-      }
+      router.push(subjectPath(subject.slug, "journey"));
     },
     [router],
   );
 
   return (
-    <div className={styles.searchWrap} ref={wrapRef}>
-      <label className={styles.searchLabel} htmlFor="subject-search">
+    <div
+      className={compact ? styles.searchWrapCompact : styles.searchWrap}
+      ref={wrapRef}
+    >
+      <label
+        className={compact ? styles.searchLabelCompact : styles.searchLabel}
+        htmlFor={compact ? "subject-search-compact" : "subject-search"}
+      >
         Search the collection
       </label>
+      {compact && (
+        <svg
+          className={styles.searchIcon}
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            fill="currentColor"
+            d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+          />
+        </svg>
+      )}
       <input
-        id="subject-search"
-        className={styles.searchInput}
+        id={compact ? "subject-search-compact" : "subject-search"}
+        className={compact ? styles.searchInputCompact : styles.searchInput}
         type="search"
         role="combobox"
         aria-expanded={open}
@@ -73,12 +100,25 @@ export default function SubjectSearch({ initialQuery = "", autofocus }: Props) {
         aria-activedescendant={
           activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined
         }
-        placeholder="Try flower, landscape, animal…"
+        placeholder={
+          compact
+            ? "Search motifs…"
+            : "Try flower, landscape, animal…"
+        }
         value={q}
         autoFocus={autofocus}
-        onChange={(e) => setQ(e.target.value)}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          if (results.length > 0) setOpen(true);
+        }}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
         onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setOpen(false);
+            return;
+          }
           if (!open || !results.length) return;
           if (e.key === "ArrowDown") {
             e.preventDefault();
@@ -89,8 +129,6 @@ export default function SubjectSearch({ initialQuery = "", autofocus }: Props) {
           } else if (e.key === "Enter" && activeIndex >= 0) {
             e.preventDefault();
             go(results[activeIndex]);
-          } else if (e.key === "Escape") {
-            setOpen(false);
           }
         }}
       />

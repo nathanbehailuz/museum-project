@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import JourneyView from "@/app/components/JourneyView";
+import ChronologyConstellation from "@/app/components/ChronologyConstellation";
 import styles from "@/app/components/museum.module.css";
 import {
   getArtworksByIds,
@@ -8,10 +6,7 @@ import {
   mapArtwork,
 } from "@/lib/aic/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  parseSubjectSearchParams,
-  subjectPath,
-} from "@/lib/subjectUrlState";
+import { parseSubjectSearchParams } from "@/lib/subjectUrlState";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -30,9 +25,6 @@ export default async function JourneyPage({ params, searchParams }: Props) {
   const term = await getTermBySlug(slug);
   if (!term) {
     return <p className={styles.error}>Subject not found.</p>;
-  }
-  if (term.status === "browse_only") {
-    redirect(subjectPath(slug, "works"));
   }
 
   try {
@@ -72,24 +64,14 @@ export default async function JourneyPage({ params, searchParams }: Props) {
     });
 
     return (
-      <>
-        <nav className={styles.switcher} aria-label="Chapters">
-          {chapters.map((ch) => (
-            <Link
-              key={ch.periodIndex}
-              href={subjectPath(slug, "journey", {
-                chapter: ch.periodIndex,
-              })}
-              aria-current={
-                state.chapter === ch.periodIndex ? "page" : undefined
-              }
-            >
-              {ch.label}
-            </Link>
-          ))}
-        </nav>
-        <JourneyView chapters={chapters} activeChapter={state.chapter} />
-      </>
+      <ChronologyConstellation
+        chapters={chapters}
+        activeChapter={state.chapter}
+        subjectLabel={term.display_label}
+        workCount={term.qualifying_work_count}
+        dateMin={term.date_min}
+        dateMax={term.date_max}
+      />
     );
   } catch {
     return (
