@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "images.metmuseum.org",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "www.artic.edu",
+        pathname: "/iiif/**",
+      },
     ],
   },
 };

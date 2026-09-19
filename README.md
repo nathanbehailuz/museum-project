@@ -4,7 +4,8 @@ Searchable digital museum of everyday things in art — **Art Institute of Chica
 
 Product docs: `docs/PROJECT_BRIEF.md`, `docs/prd.md`, `docs/IMPLEMENTATION_PLAN.md`.
 
-**Note:** The deployed Vercel app is still the previous Met three-work exhibition maker until Phase 3 UI ships. Phase 1 index is live in Supabase.
+**Phase 3 live:** https://museum-exhibition-iota.vercel.app  
+Launch subjects: `/subject/flower/journey`, `/subject/landscape/journey`, `/subject/animal/journey`.
 
 ## Local setup
 
@@ -20,7 +21,26 @@ npm test
 npm run build
 ```
 
-## Phase 1 ingest (AIC getting-started)
+Open `/` to search subjects. Example journeys: `/subject/flower/journey`, `/subject/landscape/journey`, `/subject/animal/journey`.
+
+## App routes
+
+| Path | Purpose |
+| --- | --- |
+| `/` | Search home + flower teaser |
+| `/subject/[slug]/journey` | Chronological chapters |
+| `/subject/[slug]/works` | Filtered grid (URL filters) |
+| `/subject/[slug]/connections` | Ranked co-occurrence + radial |
+| `?artwork=` | Shared inspection on any subject view |
+
+## API (BFF → Supabase)
+
+- `GET /api/subjects?q=`
+- `GET /api/subjects/[slug]`
+- `GET /api/subjects/[slug]/journey|works|connections`
+- `GET /api/artworks/[sourceId]`
+
+## Phase 1–2 ingest (AIC getting-started)
 
 ```bash
 npm run ingest:download          # allArtworks.jsonl + someArtworks.csv → data/aic/

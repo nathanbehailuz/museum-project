@@ -1,6 +1,6 @@
 # Implementation Plan: Subject Museum
 
-Status: Phase 2 complete — ready for Phase 3 (UI on indexed data)
+Status: Phase 3 complete — ready for Phase 4 (index refresh)
 Related documents: [Project brief](PROJECT_BRIEF.md), [PRD](prd.md), [Content audit](content-audit.md)
 
 This document is the build order and phase gate list. The PRD stays the product contract: what must be true. Do not copy task lists back into the PRD.
@@ -94,7 +94,7 @@ UI components call these routes, not the museum API or the Supabase service role
 
 **Exit:** Search + Journey + All Works + Connections + inspection + shareable URL for ≥3 journey-ready subjects on a deployed preview with real IIIF images.
 
-**Status:** Not started. (Existing Met exhibition-maker UI in `src/` is previous-direction code until replaced.)
+**Status:** Complete. Search home, subject shell (Journey / Works / Connections), BFF routes, inspection via `?artwork=`, share control, signature motion + reduced-motion. Production: https://museum-exhibition-iota.vercel.app — smoked flower, landscape, animal (journey_ready, IIIF imageIds, 200 on journey/works/connections/pages).
 
 ### Build, in order
 

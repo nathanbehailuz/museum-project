@@ -137,7 +137,7 @@ async function main() {
     .insert({
       source: "artic",
       source_version: "getting-started+live-enrich",
-      notes: `someArtworks=${someIds.length}; extra_jsonl=${extra.length}`,
+      notes: `artworks=${artworks.length}`,
     })
     .select("id")
     .single();

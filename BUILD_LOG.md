@@ -13,7 +13,7 @@ Primary source: Art Institute of Chicago official dump → normalize/validate �
 
 Must ship: reproducible sample ingest, validation pipeline, ≥3 journey-ready subjects from data, Journey / All Works / Connections, shared inspection, shareable URLs, one signature transition, loading/empty/error states.
 
-**Previous direction (Met exhibition maker, still live on Vercel):** three-work Met exhibition maker until Phase 3 UI ships. Historical Met pools remain in `data/subjects.json`.
+**Previous direction (Met exhibition maker):** three-work Met exhibition maker — gallery/API files remain unused; home is now the subject museum.
 
 ## Goal & scope decision (historical — Met exhibition maker)
 
@@ -25,12 +25,12 @@ Left out to keep the product small: accounts, database, private collections, mul
 
 ## Stack & tooling
 
-- Next.js 15 App Router + TypeScript; route handlers as the BFF (UI still Met until Phase 3).
-- **Supabase** project `soavlmfrtmobmgesccrp` (org museum-project) — artworks/terms/artwork_terms indexed.
+- Next.js 15 App Router + TypeScript; route handlers as the BFF for subject museum.
+- **Supabase** project `soavlmfrtmobmgesccrp` (org museum-project) — artworks/terms/artwork_terms + connections/periods.
 - Art Institute of Chicago getting-started + live API enrich; IIIF image URLs.
-- Vitest (including `src/lib/aic` normalize/validate).
-- Ingest scripts: `npm run ingest:download`, `ingest`, `ingest:load-cache`.
-- Deploy (old UI): Vercel — https://museum-exhibition-iota.vercel.app
+- Vitest (including `src/lib/aic` normalize/validate/url state).
+- Ingest scripts: `npm run ingest:download`, `ingest`, `ingest:load-cache`, `ingest:connections`.
+- Deploy: Vercel — https://museum-exhibition-iota.vercel.app (Phase 3 subject UI)
 
 ## Key decisions & trade-offs
 
@@ -95,7 +95,22 @@ Phase test cases live in the implementation plan. Record pass/fail and gaps here
 
 Live URL: https://museum-exhibition-iota.vercel.app
 
-### Phase 3 test results
+### AIC Phase 3 (subject museum UI) test results
+
+| ID | Result | Notes |
+| --- | --- | --- |
+| P3-1 | Pass | Autocomplete `q=flow` → flower (local + prod) |
+| P3-2 | Pass | flower/landscape/animal journey_ready; unavailable layout suggests alternatives |
+| P3-3 | Pass | Journey chapters with featured IIIF ids (14 / 11 / 23 periods) |
+| P3-4 | Pass | Works filters/sort in URL via `subjectUrlState` |
+| P3-5 | Pass | Connections ranked list + radial; keyboard list primary |
+| P3-6 | Pass | Inspection `?artwork=`; Escape + focus return |
+| P3-7 | Pass | Share copies/share URL; path+query preserved |
+| P3-8 | Pass | Empty filters, image fallback, index-error copy |
+| P3-9 | Pass | Chapter fade / inspect enter; `prefers-reduced-motion` disables |
+| P3-10 | Pass | Production https://museum-exhibition-iota.vercel.app smoked for 3 subjects |
+
+### Phase 3 test results (historical Met exhibition maker)
 
 | ID | Result | Notes |
 | --- | --- | --- |
@@ -119,8 +134,8 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Phase 1 index is getting-started slice (~1222 enriched works), not the full AIC dump.
 - Manual relevance review (≥80% of ≤12 samples) for flower/landscape/animal still pending.
 - Put `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` before re-running ingest (anon write policies revoked).
-- App `src/` UI still Met exhibition maker; Supabase not wired to pages yet.
-- Full README still evolving with Phase 3 UI.
+- Met exhibition-maker code remains under `src/app` API/gallery files but is unused by the home route.
+- Preview deployments may have Vercel SSO; production alias is public.
 
 ## Time spent
 
@@ -132,11 +147,23 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Docs pivot + AIC retarget | ~1 h | Brief/PRD/plan |
 | Phase 1 AIC Supabase + getting-started ingest | ~2–2.5 h | Schema, enrich, validate, load |
 | Phase 2 connections + periods | ~0.5–1 h | Scoring module, script, verify |
+| Phase 3 UI on indexed data | ~2–2.5 h | BFF, search, journey/works/connections, deploy |
 | 4. Polish and verify | | |
 | 5. Release and document | | |
-| Total | ~10–12 h | Through AIC Phase 2 |
+| Total | ~12–14.5 h | Through AIC Phase 3 |
 
 ## Session notes
+
+### 2026-09-19 (Phase 3 — UI on indexed data)
+
+- Replaced Met home with subject search + flower teaser. Added `/subject/[slug]/{journey,works,connections}` with shared shell (switcher, share, `?artwork=` inspection).
+- Server layer: `src/lib/supabase/server.ts`, `src/lib/aic/iiif.ts`, `apiTypes`, `subjectUrlState` (+ Vitest), `queries.ts`.
+- BFF: `/api/subjects`, `/api/subjects/[slug]/{journey,works,connections}`, `/api/artworks/[sourceId]`.
+- UI: ArtworkImage, SubjectSearch autocomplete, JourneyView chapters, WorksView filters in URL, ConnectionsView ranked list + CSS radial, focus trap / Escape / reduced-motion.
+- Fixed broken `scripts/ingest/run.ts` notes template so `next build` typechecks.
+- Set Vercel env `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`; deployed preview then production.
+- Verified local + production smoke: flower (84), landscape (72), animal (71) journey_ready; journey/works/connections/pages 200; IIIF imageIds present; autocomplete `q=flow` → flower. Live: https://museum-exhibition-iota.vercel.app
+- Not done: Phase 4 refresh; OpenSeadragon; deleting Met gallery files; manual image relevance review.
 
 ### 2026-09-19 (Phase 2 — term connections + periods)
 

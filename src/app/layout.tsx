@@ -15,8 +15,9 @@ const sans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "Museum Exhibition Maker",
-  description: "Make a little exhibition about something you almost missed.",
+  title: "Subject museum · Art Institute of Chicago",
+  description:
+    "Search a subject, follow its journey through time, browse works, and explore connections.",
 };
 
 export default function RootLayout({
