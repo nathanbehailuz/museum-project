@@ -1,59 +1,73 @@
 # Content Audit
 
 Source: [Art Institute of Chicago API](https://api.artic.edu/docs/)  
-Dump: [api-data](https://github.com/art-institute-of-chicago/api-data) → `https://artic-api-data.s3.amazonaws.com/artic-api-data.tar.bz2`  
-Status: **Not yet run** — fill this file during Phase 1 ingest.  
-Date: _
+Getting-started: [api-data/getting-started](https://github.com/art-institute-of-chicago/api-data/tree/master/getting-started)  
+Enrichment: live `GET https://api.artic.edu/api/v1/artworks?ids=…&fields=…`  
+Supabase project: `soavlmfrtmobmgesccrp` (`https://soavlmfrtmobmgesccrp.supabase.co`)  
+Status: **Phase 1 sample ingest complete** (getting-started + live enrich)  
+Date: 2026-09-19
 
-## Method (planned)
+## Method (executed)
 
-1. Download the official AIC data dump (or a documented sample slice for the first pass). Prefer the dump over scraping `api.artic.edu` for bulk analysis.
-2. Parse artwork records; keep fields needed for display and validation (`id`, title, artist, dates, medium, artwork type, `image_id`, dimensions, alt, `is_public_domain`, source URL, `subject_titles`, `term_titles`, optional description).
-3. Qualify an artwork for a subject only when the canonical term or approved alias appears in `subject_titles` or `term_titles`. Title/description matches may rank but do not qualify alone.
-4. Require `is_public_domain === true`, usable `image_id` + dimensions, and a dated record (`date_start` or derived year).
-5. Validate a small IIIF request during ingest for displayable images.
-6. Aggregate per term; assign journey-ready / browse-only / unavailable per [PROJECT_BRIEF.md](PROJECT_BRIEF.md) thresholds.
-7. Manually review a deterministic sample of up to 12 works per launch subject (≥80% clearly related); store review result and reason.
+1. Downloaded official getting-started files into `data/aic/` (gitignored binaries):
+   - `allArtworks.jsonl` (~21 MB; id, title, artist, department, accession only)
+   - `someArtworks.csv` (~422 highlighted works; same sparse fields)
+2. Built ID universe: all `someArtworks` IDs + 800 additional IDs from `allArtworks.jsonl` (1222 total).
+3. Enriched each ID from the live AIC API with `subject_titles`, `term_titles`, dates, `image_id`, thumbnail, `is_public_domain`.
+4. Normalized + upserted into Supabase (`artworks`, `terms`, `artwork_terms`); recorded `ingestion_runs`.
+5. Validated terms per [PROJECT_BRIEF.md](PROJECT_BRIEF.md) thresholds; stored `validation_reasons`.
+6. Re-ran load against the same cache: artwork count stayed **1222** (idempotent upsert on `(source, source_id)`).
+
+**Why live enrich?** Getting-started files alone cannot support journey validation — they lack catalog subjects, rights, images, and dates.
 
 ## Dump / run metadata
 
 | Field | Value |
 | --- | --- |
-| Dump URL / version | _ |
-| Ingest run id | _ |
-| Artworks upserted | _ |
-| Terms evaluated | _ |
-| Journey-ready count | _ |
-| Browse-only count | _ |
-| Unavailable / rejected notes | _ |
+| Source version | `getting-started+live-enrich` |
+| ID universe | 422 someArtworks + 800 jsonl = 1222 |
+| Artworks upserted | 1222 |
+| Displayable (PD + image + dated) | ~861 in enrich cache |
+| Terms evaluated | ~1606 |
+| Journey-ready (examples below) | many; see preferred launch set |
+| Browse-only / unavailable | stored with reasons on `terms.validation_reasons` |
 
-## Candidate journey-ready subjects
+## Candidate journey-ready subjects (for manual relevance review)
 
-Fill after validation. Target ≥3 launch subjects discovered from data (examples only until proven: window, chair, bowl — **not** locked).
+Preferred everyday / visual subjects discovered from this slice (all hard requirements passed in automation):
 
 | Subject (canonical) | Qualifying works | Year span | Artists | Status | Notes |
 | --- | --- | --- | --- | --- | --- |
-| _ | _ | _ | _ | _ | _ |
-| _ | _ | _ | _ | _ | _ |
-| _ | _ | _ | _ | _ | _ |
+| flower | 84 | 1505 | 28 | journey_ready | Strong launch candidate |
+| landscape | 72 | 1431 | 44 | journey_ready | Strong launch candidate |
+| animal | 71 | 2981 | 45 | journey_ready | Strong launch candidate |
+| vessel | 59 | 5187 | 23 | journey_ready | Object / design angle |
+| portrait | 58 | 1776 | 51 | journey_ready | Broad; still catalog-valid |
+| tree | 48 | 2331 | 35 | journey_ready | |
+| water | 31 | 262 | 28 | journey_ready | |
+| bird | 28 | 2531 | 19 | journey_ready | |
+| horse | 24 | 2239 | 21 | journey_ready | |
+
+Launch review target for UI: **flower**, **landscape**, **animal** (or vessel/tree as alternates). Manual ≥80% relevance sample still pending (Phase 1 exit P1-5 partial — candidates listed; visual review not finished).
 
 ## Relevance review (launch subjects)
 
 | Subject | Sample size | Pass rate | Result | Notes |
 | --- | --- | --- | --- | --- |
-| _ | ≤12 | _ | _ | _ |
+| flower | ≤12 | _ | pending | |
+| landscape | ≤12 | _ | pending | |
+| animal | ≤12 | _ | pending | |
 
-## AIC quirks to verify and document
+## AIC quirks verified
 
-- Prefer data dumps for bulk copy/analysis; avoid deep pagination / scraping of the live API (>10k search results).
-- Live API: throttle to about one request per second when used; no API key required for public collection data.
-- Images are not in the dump — construct IIIF URLs from `image_id`; museum does not offer an image dump.
-- Schema of dump JSON mirrors the live API artwork resource; switching between dump and API should be straightforward.
-- `is_public_domain` must be filtered locally from the dump for the public-domain set.
-- Missing optional fields (description, some title arrays) are common; never invent metadata.
-- Generic catalog terms (`art`, `painting`, `paper`, `people`, etc.) must be excluded or down-weighted for Connections.
+- Getting-started JSONL/CSV are sparse; full validation fields require dump files or live API enrich.
+- Live API accepts batched `ids=` (we used 40/request, ~1.1s pause).
+- `is_public_domain` must be filtered client-side; many highlighted works are not PD.
+- Images are IIIF via `image_id`; not in getting-started files.
+- Generic / technique / fair tags (`painting`, `oil on canvas`, `century of progress`, etc.) are blocked or down-ranked in normalize.
+- Singularization must not turn `canvas` into `canva`.
 
 ## Out of scope for this audit
 
-- The Met Collection API and any `data/subjects.json` Met object-ID pools from the previous exhibition-maker direction.
+- Full S3 dump ingest (`artic-api-data.tar.bz2`) — next expansion once getting-started path is solid.
 - Multi-museum fusion.

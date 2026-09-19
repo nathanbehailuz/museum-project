@@ -1,6 +1,6 @@
 # Implementation Plan: Subject Museum
 
-Status: Phase 0 — docs aligned; ready for Phase 1 (Supabase + AIC dump ingest)
+Status: Phase 1 complete (getting-started sample ingest + validation) — ready for Phase 2 (connections)
 Related documents: [Project brief](PROJECT_BRIEF.md), [PRD](prd.md), [Content audit](content-audit.md)
 
 This document is the build order and phase gate list. The PRD stays the product contract: what must be true. Do not copy task lists back into the PRD.
@@ -47,7 +47,7 @@ UI components call these routes, not the museum API or the Supabase service role
 
 **Exit:** Migrations exist; dump (or documented sample slice) is cleaned, normalized, and upserted; validation statuses and rejection reasons are stored; sample load is reproducible and idempotent; ≥3 journey-ready candidates identified for review.
 
-**Status:** Not started.
+**Status:** Complete (2026-09-19). Supabase project `soavlmfrtmobmgesccrp`; getting-started + live enrich; 1222 artworks; journey-ready candidates in [content-audit.md](content-audit.md). Manual relevance sample still pending.
 
 ### Build, in order
 

@@ -29,9 +29,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Env (none required for Met API; keep local secrets out of git)
+# Env (Supabase secrets — never commit real keys)
 .env
 .env*.local
+!.env.example
 
 # Vercel
 .vercel

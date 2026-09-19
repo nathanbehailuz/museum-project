@@ -1,33 +1,49 @@
-# Museum Exhibition Maker
+# Subject Museum
 
-Small exhibition maker: open a three-work show of everyday subjects in art, built with Next.js and [The Met Collection API](https://metmuseum.github.io/).
+Searchable digital museum of everyday things in art — **Art Institute of Chicago** catalog indexed in Supabase. Pitch: *Type a thing. See how artists have pictured it across time.*
 
-**Live:** https://museum-exhibition-iota.vercel.app
+Product docs: `docs/PROJECT_BRIEF.md`, `docs/prd.md`, `docs/IMPLEMENTATION_PLAN.md`.
+
+**Note:** The deployed Vercel app is still the previous Met three-work exhibition maker until Phase 3 UI ships. Phase 1 index is live in Supabase.
 
 ## Local setup
 
 ```bash
 npm install
+cp .env.example .env.local
+# Fill NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 npm run dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
 npm test
 npm run build
 ```
 
+## Phase 1 ingest (AIC getting-started)
+
+```bash
+npm run ingest:download          # allArtworks.jsonl + someArtworks.csv → data/aic/
+INGEST_ENRICH_ONLY=1 npm run ingest   # enrich IDs via api.artic.edu → enriched-cache.json
+# Requires SUPABASE_SERVICE_ROLE_KEY:
+npm run ingest:load-cache        # upsert artworks/terms + validate statuses
+```
+
+Getting-started files are sparse (no subjects/images/PD). The pipeline uses them as an ID universe, then enriches from the live API. See `data/aic/README.md` and `docs/content-audit.md`.
+
 ## Environment variables
 
-None required. The Met Collection API does not use an API key. Do not commit secrets.
+| Variable | Where |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser + server |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser + server (RLS read) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server / ingest only — never commit |
 
-## Stack notes
+## Stack
 
-- Next.js App Router + route handlers (BFF)
-- Reviewed subject pools in `data/subjects.json`
-- Images from `images.metmuseum.org`
+- Next.js App Router + TypeScript
+- Supabase Postgres (subject index)
+- Art Institute of Chicago API + IIIF images
+- Vitest
 
-Phase 3 adds curation, inspection, sharing, and a second subject (`chairs`). Query shape: `?subject=&ids=&title=`.
-
-See `docs/` and `BUILD_LOG.md` for product and build notes.
+See `BUILD_LOG.md` for decisions and verification.

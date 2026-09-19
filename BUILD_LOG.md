@@ -1,7 +1,7 @@
 # Build Log: Subject Museum
 
 Assignment: Creative, API-Integrated Web App
-Related documents: [Project brief](docs/PROJECT_BRIEF.md), [PRD](docs/prd.md), [Implementation plan](docs/IMPLEMENTATION_PLAN.md) (Met exhibition phases — superseded for product scope), [Content audit](docs/content-audit.md) (historical Met pools)
+Related documents: [Project brief](docs/PROJECT_BRIEF.md), [PRD](docs/prd.md), [Implementation plan](docs/IMPLEMENTATION_PLAN.md), [Content audit](docs/content-audit.md)
 
 Working log at the repo root. Update after every meaningful change, not only at phase end. Do not claim unchecked work passed.
 
@@ -13,7 +13,7 @@ Primary source: Art Institute of Chicago official dump → normalize/validate �
 
 Must ship: reproducible sample ingest, validation pipeline, ≥3 journey-ready subjects from data, Journey / All Works / Connections, shared inspection, shareable URLs, one signature transition, loading/empty/error states.
 
-**Previous direction (Phases 1–3 below, still live):** three-work Met exhibition maker (replace / reorder / title, `data/subjects.json` pools, no database). Production https://museum-exhibition-iota.vercel.app remains that product until the new stack ships. Implementation plan and content audit are historical until rewritten for AIC ingest.
+**Previous direction (Met exhibition maker, still live on Vercel):** three-work Met exhibition maker until Phase 3 UI ships. Historical Met pools remain in `data/subjects.json`.
 
 ## Goal & scope decision (historical — Met exhibition maker)
 
@@ -25,14 +25,18 @@ Left out to keep the product small: accounts, database, private collections, mul
 
 ## Stack & tooling
 
-- Next.js 15 App Router + TypeScript; route handlers as the BFF.
-- The Met Collection API (`collectionapi.metmuseum.org`) plus `images.metmuseum.org`.
-- Vitest for route/helper unit tests.
-- Deploy: Vercel — production https://museum-exhibition-iota.vercel.app
-- Cursor as the implementation assistant. Motion: CSS FLIP / View Transitions (Phase 4). No env vars required.
+- Next.js 15 App Router + TypeScript; route handlers as the BFF (UI still Met until Phase 3).
+- **Supabase** project `soavlmfrtmobmgesccrp` (org museum-project) — artworks/terms/artwork_terms indexed.
+- Art Institute of Chicago getting-started + live API enrich; IIIF image URLs.
+- Vitest (including `src/lib/aic` normalize/validate).
+- Ingest scripts: `npm run ingest:download`, `ingest`, `ingest:load-cache`.
+- Deploy (old UI): Vercel — https://museum-exhibition-iota.vercel.app
 
 ## Key decisions & trade-offs
 
+- Decision (2026-09-19 Phase 1): use existing empty Supabase project in org `museum-project` rather than creating a second paid project ($0/mo).
+- Decision: Phase 1 sample = AIC **getting-started** ID universe + **live API enrich** (not full S3 dump yet). Getting-started alone lacks subjects/PD/images.
+- Decision: blocklist generics/techniques (`painting`, `oil on canvas`, fairs, centuries) so journey-ready favors concrete nouns (flower, landscape, animal, …).
 - Decision (2026-09-19): pivot product from Met three-work exhibition maker to AIC dump–indexed subject museum (Journey / All Works / Connections) with Supabase. Alternative considered: finish Met Phase 4–5 then expand; rejected because the assessment story and data model are a different product. Docs updated first; code still Met until ingest phase.
 - Decision: switch from Art Institute of Chicago to The Met Collection API because it requires no key and exposes direct JPEG URLs. Alternative considered: keep AIC; rejected after product direction chose Met. **Superseded by 2026-09-19 pivot back to AIC dump + Supabase.**
 - Decision: reviewed artwork ID pools plus live metadata, because keyword/tag search often matches catalog text without showing the subject, and Met `hasImages=true` does not guarantee open-access images. Alternative considered: live search-only; rejected for visual relevance. **Historical for Met maker; new product uses dump validation + status bands instead.**
@@ -44,6 +48,9 @@ Left out to keep the product small: accounts, database, private collections, mul
 
 ## Hard parts / dead ends
 
+- Getting-started JSONL has only 5 fields — cannot validate journeys without live enrich or full dump.
+- Naive singularization turned `canvas` → `canva`; fixed with a do-not-singularize set.
+- Temporary anon write RLS used for bootstrap load (no service_role in env); **revoked after ingest**. Put real `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` for future runs.
 - Met object endpoint is often slow (~15–25s cold). Parallel batches with short timeouts failed in Phase 1; Phase 2 uses ~20s per request and parallel default-ID fetches.
 - First “windows” tag search returned many Tiffany design drawings that were not public domain and had no `primaryImage`. Had to switch to stained-glass / architectural window queries.
 - Object 1457 is titled “Casement Window” but its primary image did not clearly show a window; excluded after visual review.
@@ -109,23 +116,35 @@ Live URL: https://museum-exhibition-iota.vercel.app
 
 ## Known limitations
 
-- Product docs are AIC + Supabase subject museum; app `src/` and live deploy are still the previous Met exhibition maker until ingest/UI phases run.
-- Content audit for AIC dump not yet executed (template only).
-- Signature inspection motion not implemented on current UI.
-- Full README still describes Met exhibition maker until Phase 4 docs pass.
+- Phase 1 index is getting-started slice (~1222 enriched works), not the full AIC dump.
+- Manual relevance review (≥80% of ≤12 samples) for flower/landscape/animal still pending.
+- Put `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` before re-running ingest (anon write policies revoked).
+- App `src/` UI still Met exhibition maker; Supabase not wired to pages yet.
+- Full README still evolving with Phase 3 UI.
 
 ## Time spent
 
 | Phase | Time | Notes |
 | --- | --- | --- |
-| 1. Confirm scope and content | ~1.5–2 h | Docs earlier; Met audit, visual review, config, doc retarget |
-| 2. Vertical slice and first deploy | ~2–2.5 h | Scaffold, BFF, gallery, tests, Vercel deploy friction |
-| 3. Curation, inspection, and sharing | ~2–2.5 h | Chairs, URL state, APIs, curation UI, inspect/share, redeploy |
+| 1. Confirm scope and content (Met) | ~1.5–2 h | Historical |
+| 2. Vertical slice and first deploy (Met) | ~2–2.5 h | Historical |
+| 3. Curation, inspection, and sharing (Met) | ~2–2.5 h | Historical |
+| Docs pivot + AIC retarget | ~1 h | Brief/PRD/plan |
+| Phase 1 AIC Supabase + getting-started ingest | ~2–2.5 h | Schema, enrich, validate, load |
 | 4. Polish and verify | | |
 | 5. Release and document | | |
-| Total | ~5.5–7 h | Through Phase 3 |
+| Total | ~9–11 h | Through AIC Phase 1 |
 
 ## Session notes
+
+### 2026-09-19 (Phase 1 — Supabase + getting-started ingest)
+
+- Linked Supabase project `soavlmfrtmobmgesccrp` (org museum-project; empty ACTIVE_HEALTHY). Applied migrations for six tables + RLS + FTS/trgm.
+- Downloaded AIC getting-started (`allArtworks.jsonl`, `someArtworks.csv`). Enriched 1222 IDs via live API; upserted artworks/terms/artwork_terms; validation statuses stored.
+- Idempotent re-load kept 1222 artworks. Journey-ready examples: flower, landscape, animal, vessel, portrait, tree, water, bird, horse.
+- Revoked temporary anon write policies. Content audit + README + implementation plan Phase 1 marked complete.
+- Verified: vitest aic tests; SQL status counts (journey_ready / browse_only / unavailable). Manual image relevance review not done.
+- Not done: Phase 2 connections; UI on index; full dump; service_role in user env.
 
 ### 2026-09-19 (docs: AIC-only retarget)
 
