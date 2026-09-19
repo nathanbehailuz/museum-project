@@ -647,3 +647,273 @@
 .suggestionList a:hover {
   color: var(--primary);
 }
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.catalogNote {
+  margin: 0.5rem 0 0;
+  max-width: 36rem;
+  font-size: 0.85rem;
+  color: var(--outline);
+}
+
+.homePage {
+  position: relative;
+  max-width: 960px;
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+}
+
+.homeHero {
+  position: relative;
+  z-index: 2;
+  max-width: 36rem;
+  margin-bottom: 3rem;
+}
+
+.searchPrompt {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.5vw, 2.15rem);
+  font-weight: 400;
+  line-height: 1.25;
+  margin: 0 0 0.65rem;
+  color: var(--on-surface);
+}
+
+.homeAmbient {
+  position: absolute;
+  inset: 0 0 auto;
+  height: min(72vh, 640px);
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.homeAmbientGlow {
+  position: absolute;
+  top: 10%;
+  right: 8%;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  filter: blur(90px);
+}
+
+.homeDotGrid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image: radial-gradient(circle, var(--tertiary) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(to bottom, black 40%, transparent 95%);
+}
+
+.homeAmbientSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.homeAmbientNode {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  opacity: 0.88;
+}
+
+.homeAmbientThumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.35rem;
+  background: var(--surface-low);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.homeAmbientThumb img,
+.homeAmbientThumb > div {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: unset !important;
+}
+
+.homeAmbientDate {
+  position: absolute;
+  top: 0.3rem;
+  left: 0.3rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.15rem;
+  background: color-mix(in srgb, var(--surface-lowest) 90%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+}
+
+.featuredSubject {
+  position: relative;
+  z-index: 2;
+  margin: 2.5rem 0 3rem;
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.featuredTitle {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 400;
+  margin: 0.25rem 0 0.35rem;
+  color: var(--primary);
+}
+
+.miniTimeline {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0.5rem;
+  padding: 0.5rem 0 1rem;
+  min-height: 10rem;
+}
+
+.miniTimelineSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.miniNode {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  flex: 1;
+  max-width: 8.5rem;
+}
+
+.miniNode:nth-child(odd) {
+  margin-top: 0.5rem;
+}
+
+.miniNode:nth-child(even) {
+  margin-top: 2.25rem;
+}
+
+.miniThumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.35rem;
+  background: var(--surface-low);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.miniThumb img,
+.miniThumb > div {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: unset !important;
+}
+
+.miniNode figcaption {
+  margin-top: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.sectionHeading {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin: 0 0 1rem;
+}
+
+.subjectRows {
+  position: relative;
+  z-index: 2;
+  margin: 2rem 0;
+}
+
+.subjectRowList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.subjectRow {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.subjectRowMain {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.25rem;
+  padding: 0.85rem 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.subjectRowMain:hover .subjectRowLabel {
+  color: var(--primary);
+}
+
+.subjectRowLabel {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  transition: color 0.15s ease;
+}
+
+.subjectRowMeta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+}
+
+.subjectRowConn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  text-decoration: none;
+  color: var(--outline);
+  border-left: 1px solid var(--outline-variant);
+  font-size: 1.1rem;
+}
+
+.subjectRowConn:hover {
+  color: var(--primary);
+  background: var(--surface-low);
+}
+
+.provenance {
+  position: relative;
+  z-index: 2;
+  margin: 3rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--outline-variant);
+  font-size: 0.85rem;
+  color: var(--outline);
+  max-width: 36rem;
+  line-height: 1.5;
+}
+

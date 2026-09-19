@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { JourneyChapter, SubjectSummary } from "@/lib/aic/apiTypes";
+import { formatYearRange } from "@/lib/formatDate";
 import { subjectPath, type SubjectView } from "@/lib/subjectUrlState";
 import SubjectInspection from "./SubjectInspection";
 import SubjectSearch from "./SubjectSearch";
@@ -34,11 +35,6 @@ type Props = {
   >[];
   children: React.ReactNode;
 };
-
-function formatYearSpan(min: number | null, max: number | null): string {
-  if (min == null || max == null) return "";
-  return `${min}–${max}`;
-}
 
 export default function SubjectShell({ subject, epochs = [], children }: Props) {
   const pathname = usePathname();
@@ -87,7 +83,7 @@ export default function SubjectShell({ subject, epochs = [], children }: Props) 
     }
   }, [subject.displayLabel]);
 
-  const span = formatYearSpan(subject.dateMin, subject.dateMax);
+  const span = formatYearRange(subject.dateMin, subject.dateMax);
   const showEpochs = view === "journey" && epochs.length > 0;
 
   return (
@@ -105,14 +101,14 @@ export default function SubjectShell({ subject, epochs = [], children }: Props) 
                 className={styles.shellNavLink}
                 aria-current={view === "journey" ? "page" : undefined}
               >
-                Chronological Journey
+                Journey
               </Link>
               <Link
                 href={subjectPath(subject.slug, "connections")}
                 className={styles.shellNavLink}
                 aria-current={view === "connections" ? "page" : undefined}
               >
-                Object Connections Graph
+                Connections
               </Link>
             </nav>
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SubjectSummary } from "@/lib/aic/apiTypes";
+import { formatSubjectMeta } from "@/lib/formatDate";
 import { subjectPath } from "@/lib/subjectUrlState";
 import styles from "./museum.module.css";
 
@@ -154,10 +155,11 @@ export default function SubjectSearch({
               >
                 <span className={styles.suggestTitle}>{s.displayLabel}</span>
                 <span className={styles.suggestMeta}>
-                  {s.qualifyingWorkCount} works
-                  {s.dateMin != null && s.dateMax != null
-                    ? ` · ${s.dateMin}–${s.dateMax}`
-                    : ""}
+                  {formatSubjectMeta(
+                    s.qualifyingWorkCount,
+                    s.dateMin,
+                    s.dateMax,
+                  )}
                   {s.status === "browse_only" ? " · browse only" : ""}
                 </span>
               </button>

@@ -1,12 +1,12 @@
-# Project Brief: Subject Museum
+# Project Brief: The Met Archive
 
-Status: product concept; Journey, All Works, and Connections are the committed core pages. Working title in this repo: Museum Exhibition.
+Status: product concept; Journey and Connections are the committed core pages.
 
 Launch data source: **The Metropolitan Museum of Art** ([Collection API](https://metmuseum.github.io/) + [Open Access CSV](https://github.com/metmuseum/openaccess)), indexed in Supabase. Images are direct public-domain JPEGs (`primaryImage` / `primaryImageSmall`).
 
 ## The Idea
 
-A searchable digital museum devoted to the things we usually overlook. Visitors enter a subject (from Met catalog tags), then follow a chronological Journey, browse All Works, and explore Connections. Pitch: **Type a thing. See how artists have pictured it across time.**
+A searchable digital museum devoted to the things we usually overlook. Visitors enter a catalog subject (from Met tags), then follow a chronological Journey and explore Connections. Pitch: **What do you want to find in art?**
 
 ## Assessment Fit
 
@@ -14,7 +14,7 @@ Creative, API-Integrated Web App. Primary advanced feature: BFF + Supabase index
 
 ## Core Pages
 
-Search → Journey / All Works / Connections → inspection (`?artwork=`) → share.
+Search → Journey / Connections → inspection (`?artwork=`) → share.
 
 ## Launch
 
@@ -22,4 +22,4 @@ Search → Journey / All Works / Connections → inspection (`?artwork=`) → sh
 
 ## Out of Scope (v1)
 
-Accounts, multiple museums, computer vision, copying image binaries into Storage, inventing art-historical essays.
+Accounts, multiple museums, computer vision, copying image binaries into Storage, inventing art-historical essays, All Works browse page.

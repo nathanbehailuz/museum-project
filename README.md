@@ -1,6 +1,6 @@
-# Subject Museum (The Met)
+# The Met Archive
 
-Searchable digital museum of everyday things in art — **The Metropolitan Museum of Art** catalog indexed in Supabase. Pitch: *Type a thing. See how artists have pictured it across time.*
+Searchable digital museum of everyday things in art — **The Metropolitan Museum of Art** catalog indexed in Supabase. Pitch: *What do you want to find in art?*
 
 API docs: https://metmuseum.github.io/  
 Product docs: `docs/PROJECT_BRIEF.md`, `docs/prd.md`, `docs/IMPLEMENTATION_PLAN.md`.
@@ -56,10 +56,10 @@ npm run ingest:connections
 
 | Path | Purpose |
 | --- | --- |
-| `/` | Search + teaser |
-| `/subject/[slug]/journey` | Chronological chapters |
-| `/subject/[slug]/works` | Filtered grid |
-| `/subject/[slug]/connections` | Co-occurrence |
+| `/` | Search + featured subject |
+| `/subject/[slug]/journey` | Chronological constellation |
+| `/subject/[slug]/connections` | Catalog co-occurrence graph |
+| `/subject/[slug]/works` | Redirects to journey |
 | `?artwork=` | Inspection |
 
 ## Environment

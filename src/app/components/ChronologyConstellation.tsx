@@ -3,11 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { ArtworkCard, JourneyChapter } from "@/lib/aic/apiTypes";
+import {
+  formatDateDisplay,
+  formatSubjectMeta,
+  formatYear,
+} from "@/lib/formatDate";
 import ArtworkImage from "./ArtworkImage";
 import { useOpenArtwork } from "./SubjectShell";
 import styles from "./constellation.module.css";
 
-const MAX_NODES = 24;
+const MAX_NODES = 16;
+const MAX_PER_PERIOD = 3;
 /** Approximate node footprint used for spacing (card + caption). */
 const NODE_W = 150;
 const NODE_H = 210;
@@ -51,19 +57,13 @@ function pickWorks(
   const seen = new Set<string>();
 
   for (const ch of filtered) {
-    const first = ch.featured[0];
-    if (first && !seen.has(first.sourceId)) {
-      seen.add(first.sourceId);
-      fromPeriods.push({ work: first, periodLabel: ch.label });
-    }
-  }
-
-  for (const ch of filtered) {
+    let taken = 0;
     for (const work of ch.featured) {
       if (seen.has(work.sourceId)) continue;
       seen.add(work.sourceId);
       fromPeriods.push({ work, periodLabel: ch.label });
-      if (fromPeriods.length >= MAX_NODES) break;
+      taken += 1;
+      if (taken >= MAX_PER_PERIOD || fromPeriods.length >= MAX_NODES) break;
     }
     if (fromPeriods.length >= MAX_NODES) break;
   }
@@ -179,8 +179,9 @@ function curvePath(
 }
 
 function dateBadge(work: ArtworkCard, periodLabel: string): string {
-  if (work.dateStart != null) return String(work.dateStart);
-  if (work.dateDisplay) return work.dateDisplay.slice(0, 12);
+  if (work.dateStart != null) return formatYear(work.dateStart);
+  const cleaned = formatDateDisplay(work.dateDisplay);
+  if (cleaned) return cleaned.slice(0, 14);
   return periodLabel.slice(0, 12);
 }
 
@@ -234,8 +235,7 @@ export default function ChronologyConstellation({
     return out;
   }, [nodes]);
 
-  const spanLabel =
-    dateMin != null && dateMax != null ? `${dateMin} – ${dateMax}` : null;
+  const spanLabel = formatSubjectMeta(workCount, dateMin, dateMax);
 
   if (!pickWorks(chapters, activeChapter).length) {
     return (
@@ -262,9 +262,9 @@ export default function ChronologyConstellation({
               {subjectLabel} across time
             </span>
           </div>
-          <span className={styles.statChip}>
-            {workCount} curated works
-            {spanLabel ? ` / ${spanLabel}` : ""}
+          <span className={styles.statChip}>{spanLabel}</span>
+          <span className={styles.catalogChip}>
+            Catalog subject · decorative motif &amp; depiction
           </span>
         </div>
       </div>
@@ -338,7 +338,10 @@ export default function ChronologyConstellation({
                 </span>
                 <span className={styles.nodeMeta}>
                   {[
-                    n.work.dateDisplay,
+                    formatDateDisplay(n.work.dateDisplay) ||
+                      (n.work.dateStart != null
+                        ? formatYear(n.work.dateStart)
+                        : null),
                     n.work.mediumDisplay || n.work.artistTitle,
                   ]
                     .filter(Boolean)

@@ -157,6 +157,14 @@ Live URL: https://museum-exhibition-iota.vercel.app
 
 ## Session notes
 
+### 2026-09-19 (Homepage + Journey/Connections polish)
+
+- Unified product name **The Met Archive**; rebuilt home with search-first hero, ambient constellation imagery, featured subject (Journey + Connections CTAs), editorial subject rows, provenance line; no autofocus.
+- Journey: nav shortened to Journey / Connections; catalog-subject framing; date formatting (`5 BCE`, `ca. 1770`); cap ≤3 works/period.
+- Connections: shared-works language (hide scores); stronger shared strip + Open Journey CTA.
+- Removed dead `WorksView` / `JourneyView`; PRD/brief/README no longer treat All Works as a product page.
+- Added `src/lib/formatDate.ts` + Vitest.
+
 ### 2026-09-19 (Two-page constellation UI)
 
 - Replaced three-view light UI with dark archival shell (EB Garamond / Manrope / JetBrains Mono; gold on charcoal tokens from design mocks).

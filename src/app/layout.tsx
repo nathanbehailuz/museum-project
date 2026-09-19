@@ -21,9 +21,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Subject museum · The Met",
+  title: "The Met Archive",
   description:
-    "Search a subject, follow it through time, and explore catalog connections in The Met collection.",
+    "Search an everyday subject to follow it through time and discover what surrounds it in The Met Open Access collection.",
 };
 
 export default function RootLayout({

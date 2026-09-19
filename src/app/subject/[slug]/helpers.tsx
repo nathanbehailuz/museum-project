@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SubjectSummary } from "@/lib/aic/apiTypes";
+import { formatSubjectMeta } from "@/lib/formatDate";
 import { subjectPath } from "@/lib/subjectUrlState";
 import styles from "@/app/components/museum.module.css";
 
@@ -14,7 +15,8 @@ export function SuggestionList({ suggestions }: Props) {
       {suggestions.map((s) => (
         <li key={s.slug}>
           <Link href={subjectPath(s.slug, "journey")}>
-            {s.displayLabel} · {s.qualifyingWorkCount} works
+            {s.displayLabel} ·{" "}
+            {formatSubjectMeta(s.qualifyingWorkCount, s.dateMin, s.dateMax)}
           </Link>
         </li>
       ))}

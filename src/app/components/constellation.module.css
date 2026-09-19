@@ -129,6 +129,26 @@
   text-transform: uppercase;
 }
 
+.catalogChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  background: color-mix(in srgb, var(--primary-container) 14%, transparent);
+  color: var(--on-surface-variant);
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.intersectionActive {
+  border-top-color: color-mix(in srgb, var(--primary) 45%, transparent);
+  background: color-mix(in srgb, var(--surface) 70%, var(--surface-low));
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+}
+
 .compare {
   display: flex;
   flex-wrap: wrap;

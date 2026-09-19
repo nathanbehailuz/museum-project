@@ -138,7 +138,7 @@ export default function ConnectionsView({
             className={styles.hubEdgeLabel}
             style={{ left: `${p.midLeft}%`, top: `${p.midTop}%` }}
           >
-            {p.sharedWorkCount} shared
+            {p.sharedWorkCount} shared works
           </div>
         ))}
 
@@ -151,6 +151,10 @@ export default function ConnectionsView({
 
         {positions.map((p) => {
           const sample = p.samples[0];
+          const strength = Math.min(
+            1,
+            Math.max(0.35, p.connectionScore / Math.max(connections[0]?.connectionScore || 1, 0.01)),
+          );
           return (
             <div
               key={p.targetSlug}
@@ -159,12 +163,13 @@ export default function ConnectionsView({
                 left: `${p.left}%`,
                 top: `${p.top}%`,
                 transform: "translate(-50%, -50%)",
-                zIndex: 3,
+                zIndex: related === p.targetSlug ? 5 : 3,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: "0.35rem",
                 width: "7rem",
+                opacity: 0.55 + strength * 0.45,
               }}
             >
               <button
@@ -191,16 +196,9 @@ export default function ConnectionsView({
                 </div>
                 <span className={styles.satTitle}>{p.targetLabel}</span>
                 <span className={styles.satMeta}>
-                  score {p.connectionScore.toFixed(2)}
+                  {p.sharedWorkCount} shared works
                 </span>
               </button>
-              <Link
-                href={subjectPath(p.targetSlug, "journey")}
-                className={styles.satMeta}
-                style={{ color: "var(--primary)", textDecoration: "underline" }}
-              >
-                Open journey
-              </Link>
             </div>
           );
         })}
@@ -215,7 +213,7 @@ export default function ConnectionsView({
                 aria-pressed={related === c.targetSlug}
                 onClick={() => selectRelated(c.targetSlug)}
               >
-                {c.targetLabel} · {c.sharedWorkCount} shared
+                {c.targetLabel} · {c.sharedWorkCount} shared works
               </button>
             </li>
           ))}
@@ -223,10 +221,13 @@ export default function ConnectionsView({
       </div>
 
       {strip.length > 0 && (
-        <section className={styles.intersection} aria-label="Shared works">
+        <section
+          className={`${styles.intersection} ${related ? styles.intersectionActive : ""}`}
+          aria-label="Shared works"
+        >
           <h2 className={museum.chapterLabel}>
-            {related
-              ? `Shared with ${active?.targetLabel ?? related}`
+            {active
+              ? `${active.sharedWorkCount} works are tagged with both ${subjectLabel} and ${active.targetLabel}`
               : "Sample shared works"}
           </h2>
           <div className={museum.strip}>
@@ -234,12 +235,30 @@ export default function ConnectionsView({
               <StripCell key={work.sourceId} work={work} open={open} />
             ))}
           </div>
-          {related && (
-            <p>
-              <Link href={subjectPath(subjectSlug, "journey")}>
-                Back to {subjectLabel} journey
+          {active && (
+            <div className={museum.ctaRow}>
+              <Link
+                href={subjectPath(active.targetSlug, "journey")}
+                className={`${museum.button} ${museum.buttonPrimary}`}
+              >
+                Open {active.targetLabel} Journey
               </Link>
-            </p>
+              {!related && (
+                <button
+                  type="button"
+                  className={museum.button}
+                  onClick={() => selectRelated(active.targetSlug)}
+                >
+                  View shared works
+                </button>
+              )}
+              <Link
+                href={subjectPath(subjectSlug, "journey")}
+                className={museum.button}
+              >
+                Back to {subjectLabel} Journey
+              </Link>
+            </div>
           )}
         </section>
       )}

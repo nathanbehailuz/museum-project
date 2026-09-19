@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { ArtworkCard } from "@/lib/aic/apiTypes";
+import { formatDateDisplay } from "@/lib/formatDate";
 import ArtworkImage from "./ArtworkImage";
 import styles from "./museum.module.css";
 
@@ -158,7 +159,7 @@ export default function SubjectInspection({
               </div>
               <div>
                 <dt>Date</dt>
-                <dd>{artwork.dateDisplay || "Date unknown"}</dd>
+                <dd>{formatDateDisplay(artwork.dateDisplay) || "Date unknown"}</dd>
               </div>
               <div>
                 <dt>Medium</dt>

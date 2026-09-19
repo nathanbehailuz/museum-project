@@ -17,7 +17,7 @@ Launch source: **The Met** ([docs](https://metmuseum.github.io/)). Images via `i
 | Subjects | Normalized Met **tags** → `terms`; evidence `tag` |
 | Index | Supabase: `artworks`, `terms`, `artwork_terms`, `term_connections`, `ingestion_runs`, `term_periods` |
 | Launch subjects | ≥3 journey-ready tags after validation (flower, landscape, animal targets) |
-| App routes | `/subject/{slug}/journey\|works\|connections` |
+| App routes | `/subject/{slug}/journey\|connections` (legacy `/works` redirects to journey) |
 | Deploy | Vercel + Supabase env vars |
 | Connections | `shared / sqrt(n_A * n_B)`; min 3 shared; exclude generics |
 | Motion | CSS transform/opacity; `prefers-reduced-motion` |
@@ -27,7 +27,7 @@ Launch source: **The Met** ([docs](https://metmuseum.github.io/)). Images via `i
 | Route | Purpose |
 | --- | --- |
 | `GET /api/subjects?q=` | Autocomplete validated terms |
-| `GET /api/subjects/{slug}/journey\|works\|connections` | Subject views |
+| `GET /api/subjects/{slug}/journey\|connections` | Subject views |
 | `GET /api/artworks/{sourceId}` | Inspection detail |
 
 UI loads images directly from Met JPEG URLs returned in artwork payloads.
