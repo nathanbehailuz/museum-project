@@ -19,37 +19,36 @@ npm run dev
 
 ## Met ingest & refresh
 
-No museum API key. Images are hotlinked Met JPEGs (`images.metmuseum.org`). Ingest/refresh need `SUPABASE_SERVICE_ROLE_KEY`.
+No museum API key. Images are hotlinked Met JPEGs (`images.metmuseum.org`). Ingest needs `SUPABASE_SERVICE_ROLE_KEY`.
+
+### Full Open Access catalog (recommended)
+
+CSV has metadata only — JPEG URLs come from the Collection API. Expect a multi-hour first run; resume is automatic.
 
 ```bash
-npm run ingest:download   # optional: MetObjects.csv → data/met/
-npm run ingest            # search + load PD+image+tag slice into Supabase
-npm run ingest:refresh    # soft refresh: re-fetch existing Met object IDs
-npm run ingest:connections  # term_connections + term_periods
-```
-
-### Soft refresh (default)
-
-Re-fetches live `/v1/objects/{id}` for rows already in the index (metadata + `image_url` / `image_url_small`). Does not rebuild terms.
-
-```bash
-npm run ingest:refresh
+npm run ingest:download      # ~318MB MetObjects.csv → data/met/
+npm run ingest:csv-filter    # PD + tags + begin date → eligible-ids.json
+MET_CSV_FRESH=1 npm run ingest:csv   # truncate + enrich + upsert + rebuild terms
+# Resume after interrupt / Incapsula backoff: npm run ingest:csv
+npm run ingest:rebuild-terms         # optional mid-load terms rebuild
 npm run ingest:connections
 ```
 
-### Expand the slice
+Resume after interrupt: `npm run ingest:csv` (reads `csv-load-checkpoint.json`).  
+Smoke subset: `MET_CSV_MAX=500 MET_CSV_FRESH=1 npm run ingest:csv`.  
+Expect multi-hour runtime (~140k eligible IDs); Met may return temporary 403s — the loader backs off and retries.
 
-```bash
-MET_INGEST_QUERIES=flower,landscape,animal MET_INGEST_LIMIT=80 npm run ingest
-npm run ingest:connections
-```
-
-### Clean reload
-
-Destructive. In the Supabase SQL Editor, run the `TRUNCATE` from `supabase/migrations/20260919140000_met_pivot.sql`, then:
+### API search slice (smaller)
 
 ```bash
 npm run ingest
+npm run ingest:connections
+```
+
+### Soft refresh (existing rows only)
+
+```bash
+npm run ingest:refresh
 npm run ingest:connections
 ```
 

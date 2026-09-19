@@ -138,6 +138,7 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Preview deployments may have Vercel SSO; production alias is public.
 - Met pivot live DDL applied; soft refresh populates `image_url` / `image_url_small` (18/98 Met object fetches failed on last refresh — re-run `ingest:refresh` to backfill).
 - Soft refresh does not rebuild terms; use full `npm run ingest` (or clean TRUNCATE reload) to expand subjects.
+- **Full Met CSV enrich parked:** 139,568 eligible IDs, checkpoint ~480 done; Incapsula 403 forces concurrency 1 and multi-day runtime. Details + resume steps: [docs/parked-met-csv-load.md](docs/parked-met-csv-load.md). Ship on partial/API-slice index.
 
 ## Time spent
 
@@ -154,6 +155,21 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Total | ~12.5–15 h | Through Met Phase 4 |
 
 ## Session notes
+
+### 2026-09-19 (Park full Met CSV load)
+
+- Wrote [docs/parked-met-csv-load.md](docs/parked-met-csv-load.md): symptoms, root cause (CSV needs live object fetch; Incapsula 403; job durability), tried mitigations, checkpoint ~480/139568, resume runbook.
+- Decision: stop fighting the bulk enrich for now; keep Subject Museum on the working partial/API-slice index (flower/landscape/animal journey_ready).
+- Verified: docs only; no ingest or UI changes in this pass.
+
+### 2026-09-19 (Full Met Open Access CSV → Supabase)
+
+- Added `admin_truncate_index()` RPC migration; gitignored `MetObjects.csv` + checkpoints.
+- Pipeline: `ingest:download` → `ingest:csv-filter` (484956 rows → **139568** eligible PD+tags+date) → `ingest:csv` (API enrich + upsert + term rebuild) → `ingest:connections`.
+- Shared write path: `scripts/ingest/upsert-index.ts`; API slice `ingest` uses it too. Helper: `npm run ingest:rebuild-terms`.
+- Eligible IDs ordered with launch-tag priority (~35k first). Load runs with concurrency 1 + Incapsula 403 backoff (`data/met/csv-load.log`).
+- Mid-load verify: **319** artworks upserted so far; flower/landscape/animal/bird `journey_ready`; connections edges flower=5 landscape=1 animal=2. Full 139568 remaining via checkpoint resume.
+- Images remain hotlinked Met JPEGs (CSV has no image URLs).
 
 ### 2026-09-19 (Phase 4 — Met index refresh)
 

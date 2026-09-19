@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "background": "#111317", "secondary": "#ffb691", "inverse-surface": "#e2e2e6", "surface-container-low": "#1a1c1f", "on-surface": "#e2e2e6", "surface-container": "#1e2023", "surface": "#111317", "on-tertiary-fixed": "#1f1c0e", "surface-container-lowest": "#0c0e11", "on-secondary-fixed-variant": "#713714", "on-error": "#690005", "surface-tint": "#e9c349", "surface-bright": "#37393d", "primary": "#f2ca50", "outline-variant": "#4d4635", "on-secondary-fixed": "#341100", "secondary-container": "#713714", "tertiary": "#d6ceb9", "outline": "#99907c", "on-tertiary": "#343021", "on-tertiary-fixed-variant": "#4b4736", "primary-fixed-dim": "#e9c349", "surface-dim": "#111317", "tertiary-fixed": "#eae2cc", "on-primary-container": "#554300", "error-container": "#93000a", "on-secondary": "#542101", "tertiary-container": "#bab39e", "tertiary-fixed-dim": "#cec6b1", "inverse-on-surface": "#2f3034", "surface-variant": "#333538", "on-primary-fixed-variant": "#574500", "primary-fixed": "#ffe088", "inverse-primary": "#735c00", "error": "#ffb4ab", "on-secondary-container": "#f4a277", "on-error-container": "#ffdad6", "secondary-fixed": "#ffdbcb", "on-surface-variant": "#d0c5af", "primary-container": "#d4af37", "surface-container-highest": "#333538", "secondary-fixed-dim": "#ffb691", "on-tertiary-container": "#4a4535", "surface-container-high": "#282a2d", "on-primary": "#3c2f00", "on-primary-fixed": "#241a00", "on-background": "#e2e2e6" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin-md": "3rem", "space-xl": "3rem", "space-md": "1rem", "space-sm": "0.5rem", "margin-lg": "5rem", "gutter": "1.5rem", "space-xs": "0.25rem", "margin": "1.5rem", "gutter-lg": "2.5rem", "space-lg": "1.75rem" }, "fontFamily": { "label-accession": [ "JetBrains Mono" ], "label-timeline": [ "JetBrains Mono" ], "label-ui": [ "Manrope" ], "body-sm": [ "Manrope" ], "display-hero": [ "EB Garamond" ], "headline-lg-mobile": [ "EB Garamond" ], "headline-md": [ "EB Garamond" ], "headline-lg": [ "EB Garamond" ], "display-hero-mobile": [ "EB Garamond" ], "body-md": [ "Manrope" ], "headline-sm": [ "EB Garamond" ], "body-lg": [ "EB Garamond" ] }, "fontSize": { "label-accession": [ "0.75rem", { "lineHeight": "1.4", "letterSpacing": "0.08em", "fontWeight": "500" } ], "label-timeline": [ "0.6875rem", { "lineHeight": "1.3", "letterSpacing": "0.1em", "fontWeight": "400" } ], "label-ui": [ "0.75rem", { "lineHeight": "1.2", "letterSpacing": "0.06em", "fontWeight": "600" } ], "body-sm": [ "0.8125rem", { "lineHeight": "1.5", "letterSpacing": "0.02em", "fontWeight": "400" } ], "display-hero": [ "4.5rem", { "lineHeight": "1.05", "letterSpacing": "-0.02em", "fontWeight": "400" } ], "headline-lg-mobile": [ "2rem", { "lineHeight": "1.25", "letterSpacing": "0em", "fontWeight": "400" } ], "headline-md": [ "2rem", { "lineHeight": "1.25", "letterSpacing": "0em", "fontWeight": "400" } ], "headline-lg": [ "2.75rem", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "400" } ], "display-hero-mobile": [ "2.75rem", { "lineHeight": "1.15", "letterSpacing": "-0.01em", "fontWeight": "400" } ], "body-md": [ "0.9375rem", { "lineHeight": "1.55", "letterSpacing": "0.015em", "fontWeight": "400" } ], "headline-sm": [ "1.5rem", { "lineHeight": "1.3", "letterSpacing": "0.01em", "fontWeight": "500" } ], "body-lg": [ "1.25rem", { "lineHeight": "1.6", "letterSpacing": "0.01em", "fontWeight": "400" } ] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_16px_rgba(0,0,0,0.5)]"><div class="h-28 w-full px-gutter lg:px-margin-lg flex flex-col justify-between pt-3 pb-2.5"><div class="flex items-center justify-between gap-6"><div class="flex items-center gap-4"><div class="flex flex-col"><span class="font-headline-sm text-headline-sm tracking-wide text-on-surface uppercase">The Met Archive · Subject Explorer</span><span class="font-label-ui text-label-ui uppercase tracking-widest text-primary">Flower Across Millennia</span></div><div class="hidden xl:flex items-center bg-surface-container-low px-2.5 py-1 rounded-DEFAULT"><span class="font-label-accession text-label-accession text-on-surface-variant uppercase">42 Curated Works · 5 Millennia</span></div></div><nav class="hidden lg:flex items-center gap-1.5 p-1 bg-surface-container-lowest/80 rounded-lg" data-active-classes="bg-primary-container text-on-primary-container font-label-ui text-label-ui tracking-wider uppercase px-3 py-1.5 rounded-DEFAULT shadow-[0_0_12px_rgba(212,175,55,0.35)]"><a aria-current="page" class="transition-colors bg-primary-container text-on-primary-container font-label-ui text-label-ui tracking-wider uppercase px-3 py-1.5 rounded-DEFAULT shadow-[0_0_12px_rgba(212,175,55,0.35)]" data-path="chronological-journey" href="#">Chronological Journey</a><a class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant hover:text-on-surface px-3 py-1.5 transition-colors" data-path="object-connections-graph" href="#">Object Connections Graph</a></nav><div class="flex items-center gap-2.5"><div class="relative hidden sm:flex items-center"><span class="material-symbols-outlined absolute left-2.5 text-[18px] text-outline pointer-events-none">search</span><input class="w-52 md:w-64 bg-surface-container-low pl-8 pr-3 py-1.5 text-body-sm font-body-sm text-on-surface placeholder:text-outline rounded-DEFAULT focus:outline-none focus:bg-surface-container transition-all" placeholder="Search motifs, media, epochs..." type="text"/></div><button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT bg-surface-container-low text-on-surface-variant hover:text-primary hover:bg-surface-container font-label-ui text-label-ui uppercase tracking-wider transition-colors" title="Thematic Subject Lens" type="button"><span class="material-symbols-outlined text-[16px]">filter_vintage</span><span>Thematic Lens</span></button><button class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT bg-surface-container-low text-on-surface-variant hover:text-primary hover:bg-surface-container font-label-ui text-label-ui uppercase tracking-wider transition-colors" title="Exhibition Index and Provenance Ledger" type="button"><span class="material-symbols-outlined text-[16px]">menu_book</span><span>Exhibition Index</span></button></div></div><div class="w-full flex items-center justify-between gap-2 overflow-x-auto pt-1"><span class="font-label-timeline text-label-timeline uppercase text-outline shrink-0 mr-2">Epochs (ca. 3000 BCE – 1899 CE)</span><div class="flex items-center gap-1 shrink-0"><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">-3000 – -2951</button><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">-1400 – -1351</button><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">1350 – 1399</button><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">1600 – 1649</button><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">1650 – 1699</button><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">1700 – 1749</button><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">1750 – 1799</button><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">1800 – 1849</button><button class="px-2 py-0.5 rounded-DEFAULT font-label-timeline text-label-timeline bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" type="button">1850 – 1899</button></div></div></div></header><main class="w-full pt-28 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Interactive Canvas & Curatorial Explorer Wrapper -->
+<div class="relative w-full overflow-hidden bg-surface-container-lowest">
+<!-- Atmospheric Visual Filter Grid (Background Ambient Depth) -->
+<div class="absolute inset-0 pointer-events-none opacity-40 mix-blend-screen">
+<div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl"></div>
+<div class="absolute top-1/2 right-10 w-[30rem] h-[30rem] rounded-full bg-secondary/5 blur-[120px]"></div>
+<div class="absolute bottom-10 left-1/3 w-80 h-80 rounded-full bg-primary-container/10 blur-3xl"></div>
+</div>
+<!-- Sub-Header Contextual Filter & Query Banner -->
+<section class="relative z-20 w-full px-gutter lg:px-margin-lg py-5 bg-surface/85 backdrop-blur-md shadow-md">
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+<!-- Left Query Stamp -->
+<div class="flex flex-wrap items-center gap-3">
+<div class="inline-flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-DEFAULT shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">spa</span>
+<span class="font-label-accession text-label-accession text-on-surface uppercase tracking-wider">Subject Lens:</span>
+<span class="font-headline-sm text-headline-sm text-primary tracking-normal leading-none font-normal italic">Flower</span>
+</div>
+<div class="inline-flex items-center gap-2 bg-surface-container px-3 py-1.5 rounded-DEFAULT">
+<span class="font-label-accession text-label-accession text-on-surface-variant">42 Curated Works</span>
+<span class="text-outline text-xs">/</span>
+<span class="font-label-accession text-label-accession text-on-surface-variant">5 Millennia (-2999 – 1871 CE)</span>
+</div>
+<div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-DEFAULT bg-primary-container/15 text-primary">
+<span class="material-symbols-outlined text-[14px]">timeline</span>
+<span class="font-label-timeline text-label-timeline tracking-widest uppercase">Chronological Trajectory Active</span>
+</div>
+</div>
+<!-- Quick Subject Switcher and Graph Toggle -->
+<div class="flex items-center gap-3 self-stretch lg:self-auto justify-between sm:justify-end">
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-DEFAULT">
+<span class="font-label-timeline text-label-timeline text-outline uppercase px-2">Compare:</span>
+<button class="px-2 py-0.5 rounded-DEFAULT font-label-ui text-label-ui uppercase tracking-wider bg-surface-container text-on-surface hover:text-primary transition-colors">Vase</button>
+<button class="px-2 py-0.5 rounded-DEFAULT font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors">Lotus</button>
+<button class="px-2 py-0.5 rounded-DEFAULT font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors">Vine</button>
+</div>
+<button class="inline-flex items-center gap-2 px-3.5 py-2 bg-surface-container-high text-on-surface hover:bg-primary-container hover:text-on-primary-container rounded-DEFAULT transition-all shadow-sm" id="toggle-dossier-btn">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+<span class="font-label-ui text-label-ui uppercase tracking-widest">Inspect Dossier</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Main Viewport: Split Layout Canvas with Interactive Nodes + Curatorial Dossier Drawer -->
+<div class="relative z-10 flex flex-col xl:flex-row w-full min-h-[calc(100vh-16rem)]">
+<!-- Primary Canvas: The Chronological Arc of Floral Expression -->
+<main class="relative flex-1 px-gutter lg:px-margin-lg py-8 pb-36 overflow-x-hidden">
+<!-- Chapter Header Badge & Temporal Indicator -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-timeline text-label-timeline uppercase tracking-widest text-primary">Selected Chapter · 04</span>
+<span class="text-outline">·</span>
+<span class="font-label-accession text-label-accession text-on-surface-variant">The Global Botanical Renaissance</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-normal">
+              1650 – 1699 <span class="font-display-hero text-headline-md text-outline font-light italic ml-2">Dutch Golden Age &amp; Mughal Naturalism</span>
+</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mt-1">
+              From the elaborate multi-nozzled Delftware tulipieres conceived for rare botanical cultivation to Mughal lapidary florals and delicate botanical albums, the flower transforms into both a scientific specimen and imperial emblem.
+            </p>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex flex-col items-end">
+<span class="font-label-timeline text-label-timeline text-outline uppercase">Active Chapter density</span>
+<span class="font-label-accession text-label-accession text-primary">3 Key Masterworks Plotted</span>
+</div>
+<div class="h-8 w-px bg-surface-container-highest"></div>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-DEFAULT bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Zoom In Temporal Canvas">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+</button>
+<button class="w-8 h-8 rounded-DEFAULT bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Zoom Out Temporal Canvas">
+<span class="material-symbols-outlined text-[18px]">zoom_out</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Relative Constellation & Art Nodes Container -->
+<div class="relative w-full mt-4">
+<!-- Background Relational Connecting Vector Line (SVG Temporal Trajectory) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-0 hidden lg:block" fill="none" preserveaspectratio="none" viewbox="0 0 1100 800">
+<!-- Subtle guideline grid lines -->
+<path d="M 50 180 C 300 180, 250 420, 520 420 C 780 420, 750 220, 1040 220" stroke="rgba(212, 175, 55, 0.25)" stroke-dasharray="4 6" stroke-width="1.5"></path>
+<path d="M 520 420 C 600 580, 720 620, 920 620" stroke="rgba(212, 175, 55, 0.15)" stroke-dasharray="2 4" stroke-width="1"></path>
+<!-- Radiating Pulsing Origin Nodes -->
+<circle class="animate-ping opacity-30" cx="160" cy="180" fill="#f2ca50" r="4"></circle>
+<circle cx="160" cy="180" fill="#f2ca50" r="3"></circle>
+<circle class="animate-ping opacity-30" cx="580" cy="420" fill="#f2ca50" r="4"></circle>
+<circle cx="580" cy="420" fill="#f2ca50" r="3.5"></circle>
+<circle cx="980" cy="220" fill="#f2ca50" r="3"></circle>
+</svg>
+<!-- Chronological Stream Grid -->
+<div class="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
+<!-- Art Card 1: Earlier Antecedent Node (ca. 1650) -->
+<article class="group relative flex flex-col bg-surface-container-low hover:bg-surface-container rounded-lg p-4 transition-all duration-300 shadow-lg hover:shadow-2xl cursor-pointer">
+<!-- Top Museum Accession Badge -->
+<div class="flex items-center justify-between pb-3">
+<span class="font-label-accession text-label-accession text-primary uppercase">ca. 1650 CE</span>
+<span class="font-label-accession text-label-accession text-outline">ACC. 2011.512</span>
+</div>
+<!-- Artwork Image Plate -->
+<div class="relative w-full aspect-[4/3] rounded-DEFAULT overflow-hidden bg-surface-container-lowest flex items-center justify-center">
+<img alt="Flower Studies botanical drawings and wash ca. 1650" class="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida/AEtjO1WfZMJ_B2JC6iW3bgXPPIWMDlg3k8Dqrz3CWsC_Lq5HltL11G5a8wVJyooysK3UXglvV4ruxMPukBwFq2h4h7RVPEPCq6I5tHYrXcTHQQ323egRakKXoePQG2N0of_3nLoaqQ8_ldaZZ_yUuhtY8MPwZ2PQL2qgS1cYso4sPt0Wbd2WleTd2vyw9hM89Hikoe4ceSplW1Ok_xmKtJxOzJhvlc8W6u_X48jXD7lHuzMWHA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 backdrop-blur rounded-DEFAULT">
+<span class="font-label-timeline text-label-timeline text-on-surface-variant uppercase">Pencil &amp; Ink on Laid Paper</span>
+</div>
+</div>
+<!-- Content Metadata -->
+<div class="pt-4 flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui text-secondary uppercase tracking-wider">Botanical Study</span>
+<span class="material-symbols-outlined text-[16px] text-outline group-hover:text-primary transition-colors">north_east</span>
+</div>
+<h2 class="font-headline-md text-headline-sm text-on-surface font-normal group-hover:text-primary transition-colors">Flower Studies (Composite Sheet)</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Artist unknown · Safavid or Mughal tradition</p>
+<div class="mt-3 pt-3 flex items-center justify-between">
+<span class="font-label-timeline text-label-timeline text-outline uppercase">Motif: Iris, Narcissus, Peony</span>
+<span class="font-label-ui text-label-ui text-primary-container uppercase tracking-wider">Inspect</span>
+</div>
+</div>
+</article>
+<!-- Art Card 2: The Highlighted Dutch Delft Tulipiere Node (ca. 1695) -->
+<article class="group relative flex flex-col bg-surface-container rounded-lg p-5 transition-all duration-300 shadow-xl shadow-black/40 cursor-pointer lg:-mt-6 ring-1 ring-primary/20 hover:ring-primary">
+<!-- Golden Active Curatorial Flag -->
+<div class="absolute -top-3.5 left-6 bg-primary text-on-primary font-label-ui text-label-ui uppercase tracking-widest px-3 py-0.5 rounded-DEFAULT shadow-md flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>Active Specimen In Focus</span>
+</div>
+<!-- Top Museum Accession Badge -->
+<div class="flex items-center justify-between pb-3 pt-1">
+<span class="font-label-accession text-label-accession text-primary uppercase font-bold">ca. 1695–1705 CE</span>
+<span class="font-label-accession text-label-accession text-primary">ACC. 94.4.431</span>
+</div>
+<!-- Artwork Image Plate -->
+<div class="relative w-full aspect-[4/3] rounded-DEFAULT overflow-hidden bg-surface-container-lowest flex items-center justify-center">
+<img alt="Delftware Flower vase with spouts and lion handles from The Greek A Factory ca. 1695" class="object-contain w-full h-full transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida/AEtjO1VUsfOg0zm4m32pK_b-SWalsD-0DtHWcm9K3F5fwNZpy7ZbJCbPuMyOU7JXkQ3c3jdi042zAQI32w9pUnrx8pFzOaSgsqUsSZK4vwPJ757IvP9Dhs-E7vLFvrzF83k4kjs7H9VSOSg99Oo_2ZjOvJdBVq7voU8MPTgi9y3bmGRD9_YG1VzjY788wzTzGaKLaZrr9rA2SH1GfntKxW3CU-4htHzi01j-KEorfV-_-voBYQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 backdrop-blur rounded-DEFAULT">
+<span class="font-label-timeline text-label-timeline text-primary uppercase">Tin-Glazed Earthenware (Delftware)</span>
+</div>
+<div class="absolute top-2 right-2 w-7 h-7 rounded-full bg-primary/90 text-on-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</div>
+</div>
+<!-- Content Metadata -->
+<div class="pt-4 flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui text-primary uppercase tracking-wider">Tulip Vase (Tulipiere)</span>
+<span class="font-label-accession text-label-accession text-outline">Dutch Republic</span>
+</div>
+<h2 class="font-headline-md text-headline-sm text-primary font-normal">Flower Vase (Multi-nozzle Tulipiere)</h2>
+<p class="font-body-sm text-body-sm text-on-surface">The "Greek A" Factory (De Grieksche A) under Adriaen Kocx</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mt-1">
+                  Engineered with nine independent spouts to individually hydrate cut bulb flowers during the heights of Dutch tulip appreciation.
+                </p>
+<div class="mt-3 pt-3 flex items-center justify-between">
+<span class="font-label-timeline text-label-timeline text-secondary uppercase">Exhibited in Gallery 507</span>
+<span class="inline-flex items-center gap-1 font-label-ui text-label-ui text-primary font-bold uppercase tracking-wider">
+<span>View Dossier</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</span>
+</div>
+</div>
+</article>
+<!-- Art Card 3: Late 17th Century Transition Vase (ca. 1690-1700) -->
+<article class="group relative flex flex-col bg-surface-container-low hover:bg-surface-container rounded-lg p-4 transition-all duration-300 shadow-lg hover:shadow-2xl cursor-pointer">
+<!-- Top Museum Accession Badge -->
+<div class="flex items-center justify-between pb-3">
+<span class="font-label-accession text-label-accession text-primary uppercase">ca. 1690 CE</span>
+<span class="font-label-accession text-label-accession text-outline">ACC. 79.2.14</span>
+</div>
+<!-- Artwork Image Plate -->
+<div class="relative w-full aspect-[4/3] rounded-DEFAULT overflow-hidden bg-surface-container-lowest flex items-center justify-center">
+<img alt="Tall flambe glazed stoneware flower vase with crystalline botanical streaks ca. 1690" class="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida/AEtjO1WaCFxWI2iG0118iEH85wbyUoQulCOChkPja_uGtdy17kzQ5xqXBftJcODrgU09x6whwcinHXfc-xGLJV6jyv7CwcuLhhXy2sKNgAgc21DpInLY7u7KVJBgP6XvDxnfsJxYGnrRzpVp_N-oieqwuunT4iC7G_Zy8RJoEwOeBooK5V20N8KpSHjpPKFDxeRhFrqO-_dFh_m4YnldEEBwF-1-bAyetjU_R6Rq0wkbpeIYFg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 backdrop-blur rounded-DEFAULT">
+<span class="font-label-timeline text-label-timeline text-on-surface-variant uppercase">Glazed Stoneware / Crystalline</span>
+</div>
+</div>
+<!-- Content Metadata -->
+<div class="pt-4 flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui text-secondary uppercase tracking-wider">Vessel &amp; Glaze</span>
+<span class="material-symbols-outlined text-[16px] text-outline group-hover:text-primary transition-colors">north_east</span>
+</div>
+<h2 class="font-headline-md text-headline-sm text-on-surface font-normal group-hover:text-primary transition-colors">Cylindrical Flower Vase</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Artist unknown · East Asian export kiln</p>
+<div class="mt-3 pt-3 flex items-center justify-between">
+<span class="font-label-timeline text-label-timeline text-outline uppercase">Glaze: Flambé Mottled Flora</span>
+<span class="font-label-ui text-label-ui text-primary-container uppercase tracking-wider">Inspect</span>
+</div>
+</div>
+</article>
+</div>
+<!-- Cross-Millennia Predecessors & Successors Horizon Strip -->
+<div class="mt-14 pt-8">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">swap_horiz</span>
+<span class="font-label-ui text-label-ui uppercase tracking-widest text-on-surface">Cross-Millennia Predecessors &amp; Descendants</span>
+</div>
+<span class="font-label-timeline text-label-timeline text-outline uppercase">Tracing Flower Semantics Through 5,000 Years</span>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+<!-- Mini Node: -1347 BCE Egypt -->
+<div class="flex flex-col bg-surface-container-low hover:bg-surface-container p-2.5 rounded-DEFAULT transition-all group cursor-pointer">
+<div class="w-full aspect-square bg-surface-container-lowest rounded-DEFAULT overflow-hidden mb-2 relative">
+<img alt="Lotus Flower Inlay New Kingdom Egypt ca. 1347-1330 BCE" class="object-contain w-full h-full group-hover:scale-105 transition-transform" src="https://lh3.googleusercontent.com/aida/AEtjO1UR8Mkqyu2R5Vt1ZduqVW0IHMFmAuuOK_l2R4A7klngXnbWadZgmWXjWQ7zoK51h2jl0_vihAPFmBuoFwBA5BrW1p_JkHchcSgFfhTFRJz-sEDY_nS0TPCKmz4Tf4DKUrf4ibu0HM3EsB83cKW7o4onyW3tAHbv5xa4C6cXDm8hCkRqM9paCAQ5UZQB3KLwA0yiTkvGKhK2uJh1HFRLHPWaeCEDLTZb3M5hA9th_vwN"/>
+<span class="absolute top-1 left-1 font-label-timeline text-label-timeline bg-surface/90 text-secondary px-1 rounded-DEFAULT">-1347 BCE</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface truncate">Lotus Flower Inlay</span>
+<span class="font-label-timeline text-label-timeline text-outline truncate">Egyptian Faience</span>
+</div>
+<!-- Mini Node: -2300 BCE Minoan Gold -->
+<div class="flex flex-col bg-surface-container-low hover:bg-surface-container p-2.5 rounded-DEFAULT transition-all group cursor-pointer">
+<div class="w-full aspect-square bg-surface-container-lowest rounded-DEFAULT overflow-hidden mb-2 relative">
+<img alt="Gold flower ornament archaic Aegean ca. 2300 BCE" class="object-contain w-full h-full group-hover:scale-105 transition-transform" src="https://lh3.googleusercontent.com/aida/AEtjO1WNVfKAD1K4JiHD7bAPukqcJpvjWRGb-5GydOmaebBcMmbLCpnMLJ4RqH42JXG1YzF3iYH6q4q2UUatw1hG5sDR2hYUkm7pg_77DoYmv7QrPFJ_8eK0shsE5i9CwQeEuEChjdahkcHYnpjGFUSFSBaZBjI8lUv9rlqt8fICugPokt10JLWUY1Nc4kqYlBo0_06Bw5timbpoiVhJBSLb4lZ77sPtV3SGYNnVRHwL7AOzVA"/>
+<span class="absolute top-1 left-1 font-label-timeline text-label-timeline bg-surface/90 text-secondary px-1 rounded-DEFAULT">-2300 BCE</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface truncate">Gold Flower Plaque</span>
+<span class="font-label-timeline text-label-timeline text-outline truncate">Beaten Gold Leaf</span>
+</div>
+<!-- Mini Node: 1350 CE Song/Ming -->
+<div class="flex flex-col bg-surface-container-low hover:bg-surface-container p-2.5 rounded-DEFAULT transition-all group cursor-pointer">
+<div class="w-full aspect-square bg-surface-container-lowest rounded-DEFAULT overflow-hidden mb-2 relative">
+<img alt="Lavender and purple jun ware flower pot bowl late 14th century" class="object-contain w-full h-full group-hover:scale-105 transition-transform" src="https://lh3.googleusercontent.com/aida/AEtjO1VGNoPs8efwtK-tv5fq3FKolFiOIPniDFRpANS2jBEpICIUz3Gxq8frmjOifkzNvWFdGryfvI8sf7T7NVc9WmDYIY8fqUWJxlpTy8QMfHikWK43ggEdgdr3tJH5S3H_XdeMY8ug69LRT-21f6BTCaLe3WZzDIcTIZr-417FUEpMswimO-mJECj1CwtP_k8Fa_xdR070utzBRjiF7xtjDnH-npOgcJT8aFpeJK4qnVT3"/>
+<span class="absolute top-1 left-1 font-label-timeline text-label-timeline bg-surface/90 text-secondary px-1 rounded-DEFAULT">1350 CE</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface truncate">Flower Pot (Jun Ware)</span>
+<span class="font-label-timeline text-label-timeline text-outline truncate">Song/Ming Ceramic</span>
+</div>
+<!-- Mini Node: 1760 CE Chinoiserie Plate -->
+<div class="flex flex-col bg-surface-container-low hover:bg-surface-container p-2.5 rounded-DEFAULT transition-all group cursor-pointer">
+<div class="w-full aspect-square bg-surface-container-lowest rounded-DEFAULT overflow-hidden mb-2 relative">
+<img alt="Delft or English tin glazed flower plate with chinoiserie botanical motif ca. 1760" class="object-contain w-full h-full group-hover:scale-105 transition-transform" src="https://lh3.googleusercontent.com/aida/AEtjO1XoGRhxjPg973hvaNFxOcjxiLZLcvgS2pbgR1BX8WSOlap8sbaBu6OOJMNL_tT_yFMET42o7UOZ7OOn-U2C64vz9JTMTPLfZXNFiogRljveOOQI9pjPr2d-1bjCRo0aNdHNc3tk7hSgBIOCXGuyHsfFhFyzs37SXJnFzfg30n1eImrYcK6JRWKmCY8CMTPk9jixoxpFBaoPkCC_cLq1bD9vnY6G_e2BDfupUECw06bmOQ"/>
+<span class="absolute top-1 left-1 font-label-timeline text-label-timeline bg-surface/90 text-secondary px-1 rounded-DEFAULT">1760 CE</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface truncate">Botanical Dish</span>
+<span class="font-label-timeline text-label-timeline text-outline truncate">Joseph Flower · Bristol</span>
+</div>
+<!-- Mini Node: 1866 CE Victorian Botanical -->
+<div class="flex flex-col bg-surface-container-low hover:bg-surface-container p-2.5 rounded-DEFAULT transition-all group cursor-pointer">
+<div class="w-full aspect-square bg-surface-container-lowest rounded-DEFAULT overflow-hidden mb-2 relative">
+<img alt="John Jessop Hardwick Flower Study watercolor wild rose and thistle 1866" class="object-contain w-full h-full group-hover:scale-105 transition-transform" src="https://lh3.googleusercontent.com/aida/AEtjO1VmujED56uhheLAeiArwMYVepuX3T2OwFCsM31hmv-XfpU-C96CI3EQQNRw5FG0WxyS1-e-MMRfTW28e0qSy5W2BNwhuz9DruagnbQKn3pL6orJ3uHC2i6WkqYB9gG3BSWSGZL_v2-fmvQScmfKUlVjLIPj2azq0CIY6WafzJpW5QzmaDz8kcagDmZfO4BHWD6Z5cdgn6WGT2a01qv4B2qI9dwUvhzD1huyPRML-0AGGA"/>
+<span class="absolute top-1 left-1 font-label-timeline text-label-timeline bg-surface/90 text-secondary px-1 rounded-DEFAULT">1866 CE</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface truncate">Flower Study (Hedgerow)</span>
+<span class="font-label-timeline text-label-timeline text-outline truncate">John Jessop Hardwick</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Right Docked Curatorial Dossier Pane (Inspection Panel) -->
+<aside class="w-full xl:w-[460px] shrink-0 bg-surface-container-low xl:bg-surface-container-low/95 backdrop-blur-xl p-6 lg:p-8 flex flex-col justify-between shadow-2xl z-30 transition-all" id="curatorial-dossier">
+<div class="flex flex-col gap-5">
+<!-- Top Inspector Bar -->
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+<span class="font-label-accession text-label-accession text-primary uppercase tracking-widest">Curatorial Inspection Dossier</span>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="px-2 py-1 text-on-surface-variant hover:text-on-surface font-label-timeline text-label-timeline bg-surface-container rounded-DEFAULT transition-colors" title="Download Met Archival Record">MARC</button>
+<button class="p-1 text-on-surface-variant hover:text-primary rounded-DEFAULT transition-colors" id="close-dossier-btn" title="Close Panel">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<!-- Hero Artwork Plate In Dossier -->
+<div class="relative w-full aspect-square bg-surface-container-lowest rounded-DEFAULT overflow-hidden flex items-center justify-center p-4">
+<img alt="Archival plate: Delftware tulip vase by The Greek A Factory ca. 1695" class="object-contain w-full h-full shadow-md" src="https://lh3.googleusercontent.com/aida/AEtjO1VUsfOg0zm4m32pK_b-SWalsD-0DtHWcm9K3F5fwNZpy7ZbJCbPuMyOU7JXkQ3c3jdi042zAQI32w9pUnrx8pFzOaSgsqUsSZK4vwPJ757IvP9Dhs-E7vLFvrzF83k4kjs7H9VSOSg99Oo_2ZjOvJdBVq7voU8MPTgi9y3bmGRD9_YG1VzjY788wzTzGaKLaZrr9rA2SH1GfntKxW3CU-4htHzi01j-KEorfV-_-voBYQ"/>
+<div class="absolute bottom-2.5 right-2.5 flex items-center gap-1 bg-surface-container/90 backdrop-blur px-2 py-1 rounded-DEFAULT">
+<span class="material-symbols-outlined text-[13px] text-primary">search</span>
+<span class="font-label-timeline text-label-timeline text-on-surface uppercase">High-Res Quadrant Scan</span>
+</div>
+</div>
+<!-- Identification Block -->
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-accession text-label-accession text-outline">ACCESSION NO. 94.4.431</span>
+<span class="text-outline">·</span>
+<span class="font-label-accession text-label-accession text-secondary">DEPT OF EUROPEAN SCULPTURE &amp; DECORATIVE ARTS</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-normal">Flower vase (Tulipiere)</h2>
+<p class="font-body-md text-body-md text-primary font-serif italic mt-0.5">Manufactured at The "Greek A" Factory (De Grieksche A), active 1658–1811</p>
+</div>
+<!-- Field Metadata Matrix (Scholarly Attributes) -->
+<div class="grid grid-cols-2 gap-3 bg-surface-container p-3.5 rounded-DEFAULT text-body-sm">
+<div>
+<span class="font-label-timeline text-label-timeline text-outline block uppercase">Date Created</span>
+<span class="font-label-accession text-label-accession text-on-surface">ca. 1695–1705 CE</span>
+</div>
+<div>
+<span class="font-label-timeline text-label-timeline text-outline block uppercase">Culture / Geography</span>
+<span class="font-label-accession text-label-accession text-on-surface">Delft, Netherlands</span>
+</div>
+<div>
+<span class="font-label-timeline text-label-timeline text-outline block uppercase">Medium</span>
+<span class="font-label-accession text-label-accession text-on-surface">Tin-glazed earthenware</span>
+</div>
+<div>
+<span class="font-label-timeline text-label-timeline text-outline block uppercase">Dimensions</span>
+<span class="font-label-accession text-label-accession text-on-surface">H. 8 1/4 in. (21 cm)</span>
+</div>
+</div>
+<!-- Curatorial Context & Botanical Portrayal Notes -->
+<div class="flex flex-col gap-2">
+<span class="font-label-ui text-label-ui uppercase tracking-widest text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">psychology_alt</span>
+<span>Botanical Iconography &amp; Function</span>
+</span>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              Designed specifically during the aftermath of Dutch "Tulipomania," this multi-spouted vessel allowed precious cut tulip stems, hyacinths, and lilies to receive independent hydration while supporting their heavy petals. Each spout isolates a bulb's flowering bloom, transforming the object itself into an artificial bouquet.
+            </p>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              Cobalt-blue surface painting borrows Chinese Wanli porcelain motifs, intermingling mythical Chinese dog/lion spout terminals with indigenous European carnation and chrysanthemum sprays.
+            </p>
+</div>
+<!-- Provenance Ledger Snippet -->
+<div class="bg-surface-container/60 p-3 rounded-DEFAULT flex flex-col gap-1">
+<span class="font-label-timeline text-label-timeline text-outline uppercase tracking-wider">Provenance Chronicle</span>
+<p class="font-label-accession text-label-accession text-on-surface-variant">
+              Acquired via Gift of Mary Mandeville Johnston, 1894. Recorded in 18th-century inventory of Dutch aristocratic estates.
+            </p>
+</div>
+</div>
+<!-- Sequential Chrono Jumpers (Prev / Next In Temporal Sequence) -->
+<div class="mt-6 pt-4 flex items-center justify-between gap-3">
+<button class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-surface-container hover:bg-surface-container-high rounded-DEFAULT text-on-surface font-label-ui text-label-ui uppercase tracking-wider transition-colors">
+<span class="material-symbols-outlined text-[16px]">west</span>
+<span>ca. 1650 Studies</span>
+</button>
+<button class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-primary-container text-on-primary-container hover:bg-primary rounded-DEFAULT font-label-ui text-label-ui uppercase tracking-wider font-bold transition-colors">
+<span>ca. 1690 Vase</span>
+<span class="material-symbols-outlined text-[16px]">east</span>
+</button>
+</div>
+</aside>
+</div>
+<!-- Bottom Persistent Archival Timeline Scrubber (Full-Width Epoch Bar) -->
+<nav aria-label="Timeline Epoch Navigation" class="fixed bottom-0 left-0 w-full z-40 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(0,0,0,0.7)] px-gutter lg:px-margin-lg py-3">
+<!-- Calibrated Timeline Top Metrics & Legend -->
+<div class="flex items-center justify-between pb-2 mb-1">
+<div class="flex items-center gap-3">
+<span class="font-label-timeline text-label-timeline uppercase tracking-widest text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">linear_scale</span>
+<span>Historical Epoch Scrubber</span>
+</span>
+<span class="hidden md:inline-block font-label-accession text-label-accession text-outline">
+            Showing Chapter 4 of 9 (42 Total Recorded Objects)
+          </span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-timeline text-label-timeline text-on-surface-variant">Drag or click epoch to jump millennia</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+</div>
+</div>
+<!-- Scrubber Track & Interactive Era Segments -->
+<div class="relative w-full flex items-center gap-1 overflow-x-auto pb-1">
+<!-- Segment 0: Archaic & Minoan Gold -->
+<button class="group flex-1 min-w-[110px] flex flex-col items-start p-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all text-left">
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-outline group-hover:text-primary transition-colors">-3000 – -2951</span>
+<span class="font-label-accession text-label-accession text-outline bg-surface-container px-1 rounded-DEFAULT">1</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface-variant group-hover:text-on-surface truncate w-full">Minoan Floral Gold</span>
+</button>
+<!-- Segment 1: Egyptian New Kingdom -->
+<button class="group flex-1 min-w-[110px] flex flex-col items-start p-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all text-left">
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-outline group-hover:text-primary transition-colors">-1400 – -1351</span>
+<span class="font-label-accession text-label-accession text-outline bg-surface-container px-1 rounded-DEFAULT">1</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface-variant group-hover:text-on-surface truncate w-full">Lotus Inlay Rebirth</span>
+</button>
+<!-- Segment 2: Song & Yuan / Ming -->
+<button class="group flex-1 min-w-[110px] flex flex-col items-start p-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all text-left">
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-outline group-hover:text-primary transition-colors">1350 – 1399</span>
+<span class="font-label-accession text-label-accession text-outline bg-surface-container px-1 rounded-DEFAULT">4</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface-variant group-hover:text-on-surface truncate w-full">Jun Ware Potters</span>
+</button>
+<!-- Segment 3: Early Modern 1600 -->
+<button class="group flex-1 min-w-[110px] flex flex-col items-start p-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all text-left">
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-outline group-hover:text-primary transition-colors">1600 – 1649</span>
+<span class="font-label-accession text-label-accession text-outline bg-surface-container px-1 rounded-DEFAULT">2</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface-variant group-hover:text-on-surface truncate w-full">Early Botanical Albums</span>
+</button>
+<!-- Segment 4: ACTIVE - Dutch Golden Age (1650–1699) -->
+<button class="group flex-1 min-w-[130px] flex flex-col items-start p-2 rounded-DEFAULT bg-primary-container/20 text-primary shadow-lg ring-1 ring-primary transition-all text-left relative">
+<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-primary"></div>
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-primary font-bold">1650 – 1699</span>
+<span class="font-label-accession text-label-accession bg-primary text-on-primary px-1 rounded-DEFAULT font-bold">3</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface font-semibold truncate w-full">Delftware Tulipieres</span>
+</button>
+<!-- Segment 5: 1700 - 1749 Baroque -->
+<button class="group flex-1 min-w-[110px] flex flex-col items-start p-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all text-left">
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-outline group-hover:text-primary transition-colors">1700 – 1749</span>
+<span class="font-label-accession text-label-accession text-outline bg-surface-container px-1 rounded-DEFAULT">9</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface-variant group-hover:text-on-surface truncate w-full">Floral Receptacles</span>
+</button>
+<!-- Segment 6: 1750 - 1799 Enlightenment & Chinoiserie -->
+<button class="group flex-1 min-w-[110px] flex flex-col items-start p-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all text-left">
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-outline group-hover:text-primary transition-colors">1750 – 1799</span>
+<span class="font-label-accession text-label-accession text-outline bg-surface-container px-1 rounded-DEFAULT">9</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface-variant group-hover:text-on-surface truncate w-full">English Botanical Dishes</span>
+</button>
+<!-- Segment 7: 1800 - 1849 Romantic Floral -->
+<button class="group flex-1 min-w-[110px] flex flex-col items-start p-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all text-left">
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-outline group-hover:text-primary transition-colors">1800 – 1849</span>
+<span class="font-label-accession text-label-accession text-outline bg-surface-container px-1 rounded-DEFAULT">10</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface-variant group-hover:text-on-surface truncate w-full">Takemoto Porcelain</span>
+</button>
+<!-- Segment 8: 1850 - 1899 Victorian & Impressionist -->
+<button class="group flex-1 min-w-[110px] flex flex-col items-start p-2 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container transition-all text-left">
+<div class="flex items-center justify-between w-full mb-1">
+<span class="font-label-timeline text-label-timeline text-outline group-hover:text-primary transition-colors">1850 – 1899</span>
+<span class="font-label-accession text-label-accession text-outline bg-surface-container px-1 rounded-DEFAULT">3</span>
+</div>
+<span class="font-label-ui text-label-ui text-on-surface-variant group-hover:text-on-surface truncate w-full">Hardwick Botanical Watercolor</span>
+</button>
+</div>
+</nav>
+</div>
+<!-- Micro-interaction script for Dossier panel toggle and keyboard exploration -->
+<script>
+    (function() {
+      const dossier = document.getElementById('curatorial-dossier');
+      const toggleBtn = document.getElementById('toggle-dossier-btn');
+      const closeBtn = document.getElementById('close-dossier-btn');
+
+      if (toggleBtn && dossier) {
+        toggleBtn.addEventListener('click', () => {
+          dossier.classList.toggle('hidden');
+          if (!dossier.classList.contains('hidden')) {
+            dossier.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      }
+
+      if (closeBtn && dossier) {
+        closeBtn.addEventListener('click', () => {
+          dossier.classList.add('hidden');
+        });
+      }
+    })();
+  </script>
+</div></main><footer class="w-full bg-surface-container-lowest py-8 px-gutter lg:px-margin-lg shadow-[0_-1px_16px_rgba(0,0,0,0.35)]"><div class="w-full flex flex-col md:flex-row items-center justify-between gap-4"><div class="flex items-center gap-3"><span class="font-headline-sm text-headline-sm text-on-surface">The Metropolitan Museum of Art</span><span class="font-label-accession text-label-accession text-outline">Curatorial &amp; Archival Initiative</span></div><div class="flex items-center gap-6"><span class="font-label-accession text-label-accession text-on-surface-variant">Department of Asian &amp; European Decorative Arts</span><span class="font-body-sm text-body-sm text-outline">© 2024 The Metropolitan Museum of Art</span></div></div></footer></body></html>

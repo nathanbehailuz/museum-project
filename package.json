@@ -10,12 +10,16 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ingest:download": "tsx scripts/ingest/download.ts",
+    "ingest:csv-filter": "tsx scripts/ingest/csv-filter.ts",
+    "ingest:csv": "tsx scripts/ingest/load-csv.ts",
+    "ingest:rebuild-terms": "tsx scripts/ingest/rebuild-terms.ts",
     "ingest": "tsx scripts/ingest/run.ts",
     "ingest:refresh": "tsx scripts/ingest/refresh.ts",
     "ingest:connections": "tsx scripts/ingest/compute-connections.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
+    "csv-parse": "^7.0.2",
     "dotenv": "^17.4.2",
     "next": "^15.5.3",
     "react": "^19.1.1",

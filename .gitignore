@@ -42,3 +42,12 @@ yarn-error.log*
 
 # TypeScript
 next-env.d.ts
+
+# Met Open Access bulk files (large; download via npm run ingest:download)
+data/met/MetObjects.csv
+data/met/eligible-ids.json
+data/met/csv-load-checkpoint.json
+data/met/csv-filter-summary.json
+data/met/csv-load-summary.json
+data/met/csv-load.log
+data/met/eligible-priority-summary.json

@@ -99,7 +99,7 @@ async function main() {
     supabase
       .from("artwork_terms")
       .select("artwork_id, term_id, evidence_source")
-      .in("evidence_source", ["term", "subject"]),
+      .in("evidence_source", ["term", "subject", "tag"]),
   );
   const qualifyingLinks = links.filter((l) => qualifying.has(l.artwork_id));
 
