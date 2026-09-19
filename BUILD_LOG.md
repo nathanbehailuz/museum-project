@@ -109,12 +109,10 @@ Live URL: https://museum-exhibition-iota.vercel.app
 
 ## Known limitations
 
-- Product docs pivoted to AIC + Supabase subject museum; app code and live deploy are still the Met exhibition maker until ingest/UI phases run.
-- `docs/IMPLEMENTATION_PLAN.md` still describes Met Phases 1–5; needs rewrite before coding new ingest.
-- Signature inspection motion still Phase 4 (Met plan); modal opens without FLIP.
-- Image-unavailable / rapid subject cancel polish still Phase 4 (Met plan).
-- Bowls/hands not published yet (Met pools).
-- Full README polish still Phase 5 (Met plan); README still describes Met exhibition maker.
+- Product docs are AIC + Supabase subject museum; app `src/` and live deploy are still the previous Met exhibition maker until ingest/UI phases run.
+- Content audit for AIC dump not yet executed (template only).
+- Signature inspection motion not implemented on current UI.
+- Full README still describes Met exhibition maker until Phase 4 docs pass.
 
 ## Time spent
 
@@ -128,6 +126,13 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Total | ~5.5–7 h | Through Phase 3 |
 
 ## Session notes
+
+### 2026-09-19 (docs: AIC-only retarget)
+
+- Rewrote `docs/IMPLEMENTATION_PLAN.md` for Art Institute dump → Supabase phases (ingest → connections → UI → refresh). Removed Met API locked decisions and exhibition-maker phases.
+- Replaced `docs/content-audit.md` with an AIC dump audit template (not yet run).
+- Cleaned Met-as-launch / previous-direction framing from `docs/PROJECT_BRIEF.md` and `docs/prd.md`. Launch source is AIC only; second museum out of scope for v1.
+- Verified: documentation only. Ingest and UI replacement not started. Existing `src/` Met code remains previous-direction until Phase 3 UI work.
 
 ### 2026-09-19 (product pivot — docs only)
 

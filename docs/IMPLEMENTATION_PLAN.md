@@ -1,32 +1,32 @@
-# Implementation Plan: Museum Exhibition Maker
+# Implementation Plan: Subject Museum
 
-Status: Phase 3 complete — ready for Phase 4
+Status: Phase 0 — docs aligned; ready for Phase 1 (Supabase + AIC dump ingest)
 Related documents: [Project brief](PROJECT_BRIEF.md), [PRD](prd.md), [Content audit](content-audit.md)
 
 This document is the build order and phase gate list. The PRD stays the product contract: what must be true. Do not copy task lists back into the PRD.
 
 A phase is done only when its test cases pass. Do not start the next phase's product work until then. Record results and gaps in the root `BUILD_LOG.md` after every meaningful change, not only at phase end.
 
-## Locked Decisions (Phase 1)
+Launch source: **Art Institute of Chicago** (official data dump + live API for bounded refresh). Images via IIIF. Index in Supabase. Do not use The Met Collection API for v1.
+
+## Locked Decisions
 
 | Decision | Choice |
 | --- | --- |
-| Museum API | [The Met Collection API](https://metmuseum.github.io/) — no registration, no API key |
-| Upstream base | `https://collectionapi.metmuseum.org` |
-| Search | `GET /public/collection/v1.1/search` with `offset`/`limit` (`/v1/search` retires 1 Oct 2026) |
-| Object | `GET /public/collection/v1/objects/{objectID}` |
-| Images | Use `primaryImageSmall` (gallery) and `primaryImage` (inspect) from the object record; host `images.metmuseum.org` |
-| Eligibility | `isPublicDomain === true` and non-empty `primaryImage`. Search `hasImages=true` is not sufficient. |
-| Default subject | `windows` / title `Windows` |
-| Launch pool | See [`data/subjects.json`](../data/subjects.json) — windows (9 IDs) + chairs (9 IDs); windows default exhibition `[9817, 14808, 453573]` |
-| App routes | `GET /api/exhibitions?subject=`, `GET /api/artworks?ids=`, `GET /api/replacements?subject=&exclude=` |
-| Deploy | Vercel |
-| Cache | Successful normalized metadata only; 1-hour TTL via Next.js/`fetch` cache on Vercel; never cache failures as success |
-| Upstream resilience | ~25s total / ~20s per Met object (parallel); at most two retries on network/429/5xx with backoff; honor Retry-After within the deadline; no retry on permanent 4xx |
-| Motion | CSS transform/opacity FLIP or View Transitions; no extra library unless Phase 4 needs it; honor `prefers-reduced-motion` |
-| Env vars | None required for the museum API |
-| Normalized artwork shape | `id`, `title`, `artist`, `date`, `medium`, `image` (`primary` + `small`), `isPublicDomain`, `objectURL` — mapped from Met `objectID`, `title`, `artistDisplayName`, `objectDate`, `medium`, `primaryImage`/`primaryImageSmall`, `isPublicDomain`, `objectURL` |
-| Request courtesy | Optional identifying `User-Agent`; Met documents up to 80 req/s; still bound our own timeout/retry |
+| Museum | [Art Institute of Chicago API](https://api.artic.edu/docs/) |
+| Bulk data | Official dump via [api-data](https://github.com/art-institute-of-chicago/api-data) → `https://artic-api-data.s3.amazonaws.com/artic-api-data.tar.bz2` (not paginated API scraping) |
+| Live API base | `https://api.artic.edu/api/v1` — detail refresh / fallback only; throttle ~1 req/s if used for more than single-record refresh |
+| Images | IIIF from `https://www.artic.edu/iiif/2/{image_id}/…`; no image binaries in Supabase Storage |
+| Eligibility | `is_public_domain === true`, usable `image_id` + dimensions, dated record, exact term evidence in `subject_titles` / `term_titles` |
+| Index | Supabase: `artworks`, `terms`, `artwork_terms`, `term_connections`, `ingestion_runs`, `term_periods` |
+| Launch subjects | ≥3 journey-ready terms **discovered from the dump** after validation (not a hardcoded Met-style ID menu) |
+| App page routes | `/subject/{slug}/journey`, `/subject/{slug}/works`, `/subject/{slug}/connections` |
+| API routes (sketch) | `GET /api/subjects?q=`, `GET /api/subjects/{slug}/journey\|works\|connections`, `GET /api/artworks/{id}`, `GET /api/artworks?terms=` |
+| Deploy | Vercel (or equivalent) with Supabase env vars |
+| Credentials | `NEXT_PUBLIC_SUPABASE_URL`, publishable key, server-only service role — never commit secrets |
+| Connections score | `shared / sqrt(n_A * n_B)`; min 3 shared qualifying works; exclude/downweight generics |
+| Motion | CSS transform/opacity FLIP or View Transitions; honor `prefers-reduced-motion` |
+| Normalized artwork fields | source, source_id, title, artist, dates, medium, artwork type, image_id, dimensions, alt, is_public_domain, source_url, subject/term titles, searchable document |
 
 ## Proposed Route Contracts
 
@@ -34,157 +34,122 @@ Names can change; document the implemented contracts in the README.
 
 | Route | Purpose |
 | --- | --- |
-| `GET /api/exhibitions?subject=` | Default three eligible works for a supported subject. |
-| `GET /api/artworks?ids=` | Normalized records for up to three reviewed IDs. |
-| `GET /api/replacements?subject=&exclude=` | One eligible replacement not in the current selection. |
+| `GET /api/subjects?q=` | Debounced autocomplete from validated `terms`. |
+| `GET /api/subjects/{slug}/journey` | Chapters + featured works from `term_periods` / artworks. |
+| `GET /api/subjects/{slug}/works` | Filtered, paginated All Works from `artwork_terms` ⋈ `artworks`. |
+| `GET /api/subjects/{slug}/connections` | Precomputed edges from `term_connections`. |
+| `GET /api/artworks?terms=` | Intersection / detail lists for shared works. |
+| `GET /api/artworks/{id}` | Single artwork; optional live AIC refresh with cache. |
 
-UI components call these routes, not the museum API. Image requests may go directly to `images.metmuseum.org`.
+UI components call these routes, not the museum API or the Supabase service role. Image requests go to AIC IIIF.
 
-## Phase 1. Confirm Scope And Content
+## Phase 1. Supabase + Ingest
 
-**Exit:** One default subject is verified, the launch pool is recorded, and this plan's open decisions are filled in.
+**Exit:** Migrations exist; dump (or documented sample slice) is cleaned, normalized, and upserted; validation statuses and rejection reasons are stored; sample load is reproducible and idempotent; ≥3 journey-ready candidates identified for review.
 
-**Status:** Complete. Tests P1-1–P1-4 passed. See [content-audit.md](content-audit.md) and root `BUILD_LOG.md`.
-
-### Build, in order
-
-1. Live-audit candidate subjects (windows, chairs, bowls, hands) against The Met API.
-2. Choose the default subject and at least six visually relevant, public-domain, image-backed IDs.
-3. Settle route contracts, cache, timeout/retry, and motion approach.
-4. Write subject/ID config the backend can consume (`data/subjects.json`). No Next.js scaffold in this phase.
-5. Keep the root `BUILD_LOG.md` current: goal, scope, stack, tool choices, and session notes.
-
-### Test cases to pass
-
-| ID | Check | How | Result |
-| --- | --- | --- | --- |
-| P1-1 | Default subject has at least six distinct eligible IDs. | Live API audit | Pass — 9 windows IDs |
-| P1-2 | Every launch ID is public domain and has a usable primary image. | Live fetch of each ID | Pass |
-| P1-3 | Each launch work visually shows the subject; title-only matches are rejected. | Manual image review | Pass |
-| P1-4 | Open decisions above are recorded with the chosen values. | This doc + build log | Pass |
-
-## Phase 2. Vertical Slice And First Deploy
-
-**Exit:** A visitor can open the live URL and see three real works for the default subject, with loading and recoverable error behavior.
-
-**Status:** Complete. Production: https://museum-exhibition-iota.vercel.app — see root `BUILD_LOG.md`.
+**Status:** Not started.
 
 ### Build, in order
 
-1. App shell, gallery layout, and artwork-shaped skeletons.
-2. Subject/ID config consumed only by the backend.
-3. Exhibition route: validate subject, fetch upstream, filter eligibility, normalize fields.
-4. Gallery UI: three uncropped works with title, artist, and date.
-5. Loading status, insufficient-content state, and retryable upstream failure.
-6. Deploy. Verify metadata and images on the live URL before adding curation.
-
-### Test cases to pass
-
-| ID | Check | Covers | How | Result |
-| --- | --- | --- | --- | --- |
-| P2-1 | A visit with no URL state loads three distinct eligible works and the default title. | F01 | Browser, live | Pass |
-| P2-2 | Each work shows an uncropped image, title, artist, and date; missing optional metadata uses a fallback, never invented facts. | F03 | Browser | Pass |
-| P2-3 | Initial fetch shows artwork-shaped skeletons and an accessible loading status. | F01, N04, states | Browser | Pass |
-| P2-4 | Unsupported subjects and malformed IDs are rejected by the route with no upstream call. | B01 | Automated | Pass |
-| P2-5 | Records that are not explicitly public domain or lack a primary image never enter the exhibition. | B02 | Automated + live sample | Pass |
-| P2-6 | Normalized payload contains only the fields the UI needs; optional fields may be absent. | B03 | Automated | Pass |
-| P2-7 | Upstream timeout/outage shows a recoverable error with retry; no crash. | B06, states | Automated mock + live if needed | Pass |
-| P2-8 | A pool with fewer than three usable works shows a clear empty/insufficient state. | B02, states | Automated or fixture | Pass |
-| P2-9 | Layout holds at 375px, 768px, and 1440px with no page overflow. | N01 | Browser | Pass (local + production gallery) |
-| P2-10 | Production URL shows live museum metadata and real images. | Assessment API | Deployed smoke | Pass |
-
-## Phase 3. Curation, Inspection, And Sharing
-
-**Exit:** The main journey works on the preview deployment: replace, reorder, title, inspect, copy a link, and reconstruct it in a fresh session.
-
-**Status:** Complete. Production https://museum-exhibition-iota.vercel.app — chairs published; share/curate/inspect live. P3-1–P3-14 recorded in BUILD_LOG.
-
-### Build, in order
-
-1. Artwork-by-IDs and replacement routes, including exclude-current-selection.
-2. Replace a single slot; disable duplicate requests while pending.
-3. Accessible move-left/move-right (adapt to vertical mobile order).
-4. Titled input: 80-character cap, whitespace restores default title.
-5. Inspection view with required fields and museum link. Motion can wait for phase 4.
-6. URL encode/decode for subject, ordered IDs, and committed title.
-7. Copy-link, clipboard fallback, and history rules (push on subject change, replace on in-place curation).
-8. Invalid shared state and unavailable-work recovery.
-9. Cache successful metadata; bounded retry/backoff for transient upstream failures.
-10. Redeploy the preview.
-
-### Test cases to pass
-
-| ID | Check | Covers | How |
-| --- | --- | --- | --- |
-| P3-1 | Replacing one work keeps the other two and the title; replacement matches subject and is not already selected. | F04 | Browser |
-| P3-2 | A pending replacement cannot issue a duplicate request; failure keeps the current work and offers retry. | F04, B06, B07 | Browser + automated |
-| P3-3 | Move controls change order only; first/last boundary moves are disabled; keyboard works. | F05 | Browser, keyboard |
-| P3-4 | Title accepts up to 80 characters; whitespace-only commit restores the subject default; text is not rendered as HTML. | F06 | Browser + automated |
-| P3-5 | Inspection shows larger uncropped image, title, artist, date, medium, and museum record link. Close and Escape return focus to the opener; background is inert. | F07 | Browser, keyboard |
-| P3-6 | Copy link encodes subject, three ordered IDs, and committed title. A fresh session reconstructs the same exhibition without local storage. | F08 | Browser, two sessions |
-| P3-7 | Clipboard failure exposes a selectable URL; success is announced accessibly. | F08, states | Browser / mocked clipboard |
-| P3-8 | Subject change pushes history; title and curation changes replace the current entry; back/forward restores matching state. | F09 | Browser |
-| P3-9 | Unsupported subject, malformed/duplicate IDs, count ≠ 3, and oversized title show recovery, never a silently different exhibition. | F10 | Browser + automated parse tests |
-| P3-10 | A missing or ineligible shared work identifies the slot, preserves remaining valid works and title, and offers replace or reset. | F11 | Browser / fixture |
-| P3-11 | Changing subject loads that subject's default title and three distinct works. | F02 | Browser |
-| P3-12 | Successful metadata is cached for the documented TTL; failures are not stored as success. | B04 | Automated |
-| P3-13 | Transient 429/5xx/network failures retry at most twice with backoff; permanent 4xx is not retried; Retry-After is honored within the deadline. | B05 | Automated mocks |
-| P3-14 | Preview deploy reconstructs a shared URL with live data. | F08 | Deployed smoke |
-
-## Phase 4. Polish And Verify
-
-**Exit:** Required states, accessibility, reduced motion, signature transition, and performance evidence are checked. Extra subjects only after the core passes.
-
-### Build, in order
-
-1. Remaining states: image-unavailable, rapid subject change, exhausted replacement pool.
-2. Keyboard-only main journey, named controls, visible focus, status messages.
-3. Reduced-motion path, then the inspection transition (transform/opacity).
-4. Image sizing and layout stability during replacement.
-5. Additional subjects only if each has six eligible, visually relevant works. Chairs and bowls looked strong in the Phase 1 sample; hands needs more IDs.
-6. Production Lighthouse mobile run; note score and limitations.
-
-### Test cases to pass
-
-| ID | Check | Covers | How |
-| --- | --- | --- | --- |
-| P4-1 | Image delivery failure keeps label and image space, shows an unavailable fallback, and still links to the museum record. | states | Browser |
-| P4-2 | Rapid subject changes ignore or cancel stale responses; last selected subject wins. | states | Browser |
-| P4-3 | Exhausted pool or replacement error keeps the current work and explains the issue beside its controls. | states, F04 | Browser / fixture |
-| P4-4 | Main journey works without a pointer; icon controls have accessible names; focus is visible. | N02 | Keyboard |
-| P4-5 | Inspection transition uses transform/opacity; `prefers-reduced-motion` removes or simplifies it; inspection still works without motion. | N03 | Browser |
-| P4-6 | Replacement does not shift unaffected works; images are sized for rendered dimensions. | N04 | Browser |
-| P4-7 | Mobile is a vertical sequence with full-screen inspection; no overlapping text or inaccessible controls. | N01 | 375px |
-| P4-8 | Production Lighthouse mobile run is recorded; investigate layout shift or scrolling jank. Target 85 is a project goal, not a pass/fail gate. | N05 | Production run |
-| P4-9 | A second subject is published only if it meets F02 (six eligible, visually relevant works). | F02 | Live audit |
-
-## Phase 5. Release And Document
-
-**Exit:** Final production URL, docs, and submission links match the implemented product.
-
-### Build, in order
-
-1. Deploy the release candidate.
-2. Run the live smoke of the main journey on the production URL.
-3. Finish README, build log, `.env.example` or an explicit "no env vars" note.
-4. Align this plan and the PRD with what actually shipped.
-5. Optional walkthrough video: one proud detail, one hard part or shortcut.
-6. Collect live, repo, and video links in the shared submission document.
+1. Create Supabase project; add `.env.example` placeholders; enable RLS with public read only for intended views/RPCs.
+2. Migrations for `artworks`, `terms`, `artwork_terms`, `term_connections`, `ingestion_runs`, `term_periods` (+ FTS/trigram as needed).
+3. Ingest script: download dump (or use getting-started / sample slice for first pass), parse artwork JSON, normalize fields, upsert by `(source, source_id)`.
+4. Extract candidate terms from `subject_titles` / `term_titles`; write `artwork_terms` with evidence source and weight.
+5. Run validation pipeline; store status and reasons on `terms`.
+6. Record `ingestion_runs`; re-run once to prove idempotency.
+7. Update [content-audit.md](content-audit.md) with dump version, thresholds used, and candidate journey-ready subjects.
 
 ### Test cases to pass
 
 | ID | Check | How |
 | --- | --- | --- |
-| P5-1 | Fresh browser session completes the main journey on the production URL: default exhibition, replace, reorder, title, inspect, share, reconstruct. | Live smoke |
-| P5-2 | Invalid and unavailable shared URLs recover as specified; retry still works after a simulated failure if feasible. | Live smoke |
-| P5-3 | README covers features, zero-to-run setup, API quirks, architecture/caching, advanced feature, testing, and limitations. | Doc review |
-| P5-4 | BUILD_LOG records decisions, verification results, gaps, tools used, and time per phase. | Doc review |
-| P5-5 | No real secrets committed; `.env.example` is placeholders only, or docs state that no env vars are required. | Repo review |
-| P5-6 | Production build, lint, and type checks pass where configured. | CI / local |
-| P5-7 | Reviewer can open the live URL, repo, and optional video without extra access steps. | Link check |
+| P1-1 | Tables and RLS exist; service role stays server-side. | Schema review + env check |
+| P1-2 | Upsert by `(source, source_id)` does not duplicate on re-run. | Automated / script |
+| P1-3 | Only public-domain, image-backed, dated works with exact subject/term evidence count toward journey-ready. | Automated fixtures + sample dump |
+| P1-4 | Rejected terms store reasons; journey-ready / browse-only / unavailable bands apply. | Automated + spot check |
+| P1-5 | ≥3 journey-ready candidates listed in content audit for manual relevance sample. | Content audit |
+
+## Phase 2. Compute Connections
+
+**Exit:** `term_connections` populated for launch subjects; edges verifiable against shared artwork IDs; generics/aliases do not dominate.
+
+**Status:** Not started.
+
+### Build, in order
+
+1. Build co-occurrence pairs from qualifying `artwork_terms` on the same artwork.
+2. Score with cosine-style normalization; require ≥3 shared works; drop aliases of the same concept; downweight/exclude generics (`art`, `painting`, `paper`, `people`, etc.).
+3. Keep strongest edges per subject (target 4–8 for UI); store `sample_artwork_ids` and `computed_at`.
+4. Optionally precompute `term_periods` chapter boundaries and featured IDs for journey-ready terms.
+
+### Test cases to pass
+
+| ID | Check | How |
+| --- | --- | --- |
+| P2-1 | Every retained edge has ≥3 shared qualifying artwork IDs that actually carry both terms. | SQL / automated |
+| P2-2 | Generic and alias edges are excluded or heavily down-ranked. | Spot check launch subjects |
+| P2-3 | Launch subjects expose 4–8 strong connections (or honest empty if data is sparse). | Query + content audit |
+
+## Phase 3. UI On Indexed Data
+
+**Exit:** Search + Journey + All Works + Connections + inspection + shareable URL for ≥3 journey-ready subjects on a deployed preview with real IIIF images.
+
+**Status:** Not started. (Existing Met exhibition-maker UI in `src/` is previous-direction code until replaced.)
+
+### Build, in order
+
+1. Home search with debounced autocomplete against `/api/subjects`.
+2. Subject layout: header, view switcher, shared inspection shell.
+3. Journey: chronological chapters, skeletons, chapter URL state, mobile vertical timeline.
+4. All Works: grid/masonry, sort/filter in URL, pagination, evidence labels.
+5. Connections: network or ranked list + keyboard alternative; shared-works strip; links into Journey / intersection works.
+6. Share control; back/forward; invalid subject/artwork recovery.
+7. Signature motion (chapter and/or inspection FLIP); reduced-motion path.
+8. Deploy preview; smoke with live indexed data.
+
+### Test cases to pass
+
+| ID | Check | Covers | How |
+| --- | --- | --- | --- |
+| P3-1 | Autocomplete returns validated subjects with useful context. | F01, F02 | Browser |
+| P3-2 | Journey-ready opens Journey; browse-only / unavailable explain and suggest alternatives. | F03 | Browser |
+| P3-3 | Journey shows data-derived chapters, no duplicate works, factual summaries only. | F05 | Browser |
+| P3-4 | All Works filters/sort survive URL share and inspection close. | F06, F09 | Browser |
+| P3-5 | Connections edges match indexed data; list/keyboard path works without the graph. | F07, N02 | Browser, keyboard |
+| P3-6 | Inspection restores page, filters, period/connection, scroll, and focus. | F08 | Browser |
+| P3-7 | Shared URL reconstructs state in a fresh session. | F09, F10 | Two sessions |
+| P3-8 | Loading / empty / index-error / image-failure states behave per PRD §7. | states | Browser |
+| P3-9 | Signature motion uses transform/opacity; reduced motion simplifies it. | N03 | Browser |
+| P3-10 | Preview deploy shows real AIC metadata and IIIF images for ≥3 subjects. | Assessment | Deployed smoke |
+
+## Phase 4. Index As Cache + Refresh
+
+**Exit:** Re-ingest documented and runnable; live detail refresh (if shipped) uses cache + backoff; UI distinguishes missing index data from upstream outage; docs match the stack.
+
+**Status:** Not started.
+
+### Build, in order
+
+1. Document and script re-ingest / refresh of the dump into Supabase (manual for assessment; note scheduled job for production).
+2. Optional: single-artwork live AIC refresh with timeout, retry/backoff, success-only cache.
+3. Map UI errors: empty index vs Supabase down vs museum refresh failure.
+4. Finish README, `.env.example`, align this plan and PRD with what shipped.
+5. Production Lighthouse mobile note; keyboard / reduced-motion pass if not done in Phase 3.
+6. Optional walkthrough video.
+
+### Test cases to pass
+
+| ID | Check | How |
+| --- | --- | --- |
+| P4-1 | Re-running ingest updates rather than duplicates; `ingestion_runs` records the run. | Script |
+| P4-2 | Live refresh (if present) retries transient failures and does not cache failures as success. | Automated mocks |
+| P4-3 | UI copy distinguishes “not in index” from “service unavailable.” | Browser |
+| P4-4 | README covers dump reproduction, AIC quirks, precomputed vs runtime, Supabase env setup. | Doc review |
+| P4-5 | No secrets committed; production smoke of main journey on final URL. | Repo + live |
+| P4-6 | BUILD_LOG records decisions, verification, gaps, and time. | Doc review |
 
 ## Mapping To PRD Verification
 
-Keep automated tests around URL parse/serialize, bounds, eligibility, duplicate prevention, and retry/cache. Mock upstream failures. Run live museum checks separately.
+Automate: term normalization/aliases, validation rules, upsert idempotency, connection scoring, URL parse/serialize, route bounds. Mock Supabase and AIC failures. Run dump ingest and IIIF checks separately.
 
-The browser smoke in P5-1 is the same flow as PRD section 10. Capture actual results in the root `BUILD_LOG.md` rather than updating this checklist into a pass diary.
+Capture actual results in the root `BUILD_LOG.md` rather than turning this checklist into a pass diary.

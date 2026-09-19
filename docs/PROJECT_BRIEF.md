@@ -2,7 +2,7 @@
 
 Status: product concept; Journey, All Works, and Connections are the committed core pages. Name and lower-level implementation choices remain provisional. Working title in this repo: Museum Exhibition.
 
-Previous direction: a three-work Met exhibition maker (replace / reorder / title, no database). That product is superseded by this brief. Historical notes remain in `docs/IMPLEMENTATION_PLAN.md`, `docs/content-audit.md`, and `data/subjects.json` until the new ingest produces launch subjects.
+Launch data source: **Art Institute of Chicago** (official dump + IIIF images, indexed in Supabase). See [implementation plan](IMPLEMENTATION_PLAN.md) and [content audit](content-audit.md).
 
 ## The Idea
 
@@ -110,7 +110,7 @@ Connections are factual catalog co-occurrences, not claims about artistic meanin
 
 #### Connections Data
 
-For the Art Institute, the primary inputs are `subject_titles` and `term_titles`. Supporting fields such as `style_titles`, `material_titles`, `technique_titles`, `classification_titles`, and `artwork_type_title` classify the kind of relationship. For The Met (a later collection), the equivalents are `tags`, `objectName`, `classification`, and `medium`; AAT URLs can help merge equivalent concepts.
+Primary inputs are AIC `subject_titles` and `term_titles`. Supporting fields such as `style_titles`, `material_titles`, `technique_titles`, `classification_titles`, and `artwork_type_title` classify the kind of relationship. A later multi-museum version could map other institutions into the same term model; that is out of scope for v1.
 
 During ingestion, create a normalized artwork-to-term relation for every accepted catalog term. Then generate pairs of terms that occur on the same qualifying artwork. Generic terms such as `art`, `painting`, `paper`, and `people` are excluded or heavily down-weighted.
 
@@ -256,7 +256,7 @@ The museum API does not require a key, so secret storage is not the reason for t
 
 - User accounts.
 - Private saved collections.
-- Multiple museums in the first release (The Met remains a future fusion candidate).
+- Multiple museums in the first release.
 - Visitor-authored exhibition essays.
 - Computer-vision object detection.
 - Copying image binaries into Supabase Storage.
@@ -290,8 +290,6 @@ These are direction references, not designs to copy.
 | [Europeana Collections](https://europeana.eu/en/collections) | Multi-institution discovery; relevant if a second museum is added later. |
 | [OpenSeadragon IIIF example](https://openseadragon.github.io/examples/tilesource-iiif/) | Deep zoom for inspection if time permits. |
 | [art-institute-of-chicago/api-data](https://github.com/art-institute-of-chicago/api-data) | Real record shapes for development and missing-field checks. |
-| [metmuseum/openaccess](https://github.com/metmuseum/openaccess) | Future second collection; map fields into one artwork model while keeping provider IDs and attribution. |
-
 ## Why This Is a Strong Submission
 
 The concept has an identifiable personality, a focused discovery journey, and real artwork as its main visual asset. The backend addresses actual ingestion, data-quality, and search problems, while the chronological presentation and inspection transition demonstrate visible technical craft. A reviewer can search for an ordinary thing, understand why it qualifies, and travel through its visual history within a few minutes.

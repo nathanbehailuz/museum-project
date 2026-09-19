@@ -2,10 +2,10 @@
 
 Status: Draft for implementation (product pivot)
 Assignment: Creative, API-Integrated Web App
-Related documents: [Project brief](PROJECT_BRIEF.md), [Implementation plan](IMPLEMENTATION_PLAN.md) (Met exhibition maker — superseded for product scope; rewrite before coding ingest), [Content audit](content-audit.md) (historical Met pools)
+Related documents: [Project brief](PROJECT_BRIEF.md), [Implementation plan](IMPLEMENTATION_PLAN.md), [Content audit](content-audit.md)
 Implementation budget: assessment time box; prioritize a complete journey with a small reviewed collection
 
-Previous product contract: three-work Met exhibition maker (replace / reorder / title, reviewed ID pools, no database). That contract is replaced by this PRD. Do not treat Met `data/subjects.json` pools as launch subjects for the new app.
+Launch museum: **Art Institute of Chicago** only. Subjects and artwork IDs come from dump validation into Supabase, not from a hand-curated object-ID menu.
 
 ## 1. Product Goal
 
@@ -147,7 +147,7 @@ Phase-level checks belong in the implementation plan. Strategy:
 - Root README.md: features, zero-to-run setup, dump ingest reproduction, API quirks, architecture (precomputed vs runtime), advanced feature, testing, limitations.
 - Root BUILD_LOG.md maintained during each phase.
 - Root `.env.example` with Supabase placeholders only (no real secrets).
-- docs/PROJECT_BRIEF.md, this PRD, rewritten docs/IMPLEMENTATION_PLAN.md, and an updated content audit for AIC launch subjects (replacing Met-only pools).
+- docs/PROJECT_BRIEF.md, this PRD, docs/IMPLEMENTATION_PLAN.md, and docs/content-audit.md filled with AIC dump results and launch subjects.
 - Optional walkthrough video: one proud implementation detail, one hard part or shortcut.
 - Shared final submission document with live, repo, and video links.
 
@@ -170,6 +170,6 @@ Locked for planning unless dump analysis forces adjustment (record changes in BU
 | BFF | Next.js App Router route handlers; UI does not call museum or service role from the browser |
 | Deploy | Vercel (or equivalent) with env-based Supabase config |
 | Motion | CSS transform/opacity FLIP or View Transitions; honor `prefers-reduced-motion` |
-| Second museum | The Met deferred; future field-mapping candidate only |
+| Second museum | Out of scope for v1 |
 
 Update this PRD when verified dump or API behavior changes scope or acceptance criteria.

@@ -1,53 +1,59 @@
-# Content Audit (Phase 1)
+# Content Audit
 
-Source: [The Met Collection API](https://metmuseum.github.io/)
-Date: 2026-09-18
+Source: [Art Institute of Chicago API](https://api.artic.edu/docs/)  
+Dump: [api-data](https://github.com/art-institute-of-chicago/api-data) → `https://artic-api-data.s3.amazonaws.com/artic-api-data.tar.bz2`  
+Status: **Not yet run** — fill this file during Phase 1 ingest.  
+Date: _
 
-## Method
+## Method (planned)
 
-1. Search via `GET /public/collection/v1.1/search?q={term}&hasImages=true&limit=…` (and `tags=true` for some passes).
-2. Fetch each candidate with `GET /public/collection/v1/objects/{id}`.
-3. Keep only `isPublicDomain === true` with a non-empty `primaryImage`.
-4. Open `primaryImageSmall` and confirm the image actually shows the subject.
+1. Download the official AIC data dump (or a documented sample slice for the first pass). Prefer the dump over scraping `api.artic.edu` for bulk analysis.
+2. Parse artwork records; keep fields needed for display and validation (`id`, title, artist, dates, medium, artwork type, `image_id`, dimensions, alt, `is_public_domain`, source URL, `subject_titles`, `term_titles`, optional description).
+3. Qualify an artwork for a subject only when the canonical term or approved alias appears in `subject_titles` or `term_titles`. Title/description matches may rank but do not qualify alone.
+4. Require `is_public_domain === true`, usable `image_id` + dimensions, and a dated record (`date_start` or derived year).
+5. Validate a small IIIF request during ingest for displayable images.
+6. Aggregate per term; assign journey-ready / browse-only / unavailable per [PROJECT_BRIEF.md](PROJECT_BRIEF.md) thresholds.
+7. Manually review a deterministic sample of up to 12 works per launch subject (≥80% clearly related); store review result and reason.
 
-## Candidate summary
+## Dump / run metadata
 
-| Subject | Eligible sample (PD + image) | Notes |
-| --- | --- | --- |
-| windows | 19+ after “stained glass” / “window” searches | Strongest everyday-subject fit; chosen as default |
-| chairs | 14+ (armchairs / side chairs) | Strong runner-up for Phase 4 |
-| bowls | 14 from first tag search | Strong runner-up for Phase 4 |
-| hands | ~4–7 in sample | Needs a wider ID hunt before publish |
-
-Tag-only searches for “windows” returned many Tiffany design drawings that were not public domain and had no `primaryImage`. Architectural / stained-glass queries were required.
-
-## Locked launch subjects
-
-### windows
-
-Config: [`data/subjects.json`](../data/subjects.json)
-
-| Role | Object IDs |
+| Field | Value |
 | --- | --- |
-| Default exhibition | 9817, 14808, 453573 |
-| Full launch pool (9) | 9817, 14808, 453573, 5497, 14807, 5496, 444829, 444826, 436896 |
+| Dump URL / version | _ |
+| Ingest run id | _ |
+| Artworks upserted | _ |
+| Terms evaluated | _ |
+| Journey-ready count | _ |
+| Browse-only count | _ |
+| Unavailable / rejected notes | _ |
 
-Each ID was live-fetched and visually reviewed. Rejected examples include non-PD Tiffany designs (e.g. 16967), casement listings with misleading images (1457), and figure-centered glass fragments (467916).
+## Candidate journey-ready subjects
 
-### chairs (Phase 3)
+Fill after validation. Target ≥3 launch subjects discovered from data (examples only until proven: window, chair, bowl — **not** locked).
 
-| Role | Object IDs |
-| --- | --- |
-| Default exhibition | 221, 230, 269 |
-| Full pool (9) | 221, 230, 269, 252, 219, 233, 177, 182, 212 |
+| Subject (canonical) | Qualifying works | Year span | Artists | Status | Notes |
+| --- | --- | --- | --- | --- | --- |
+| _ | _ | _ | _ | _ | _ |
+| _ | _ | _ | _ | _ | _ |
+| _ | _ | _ | _ | _ | _ |
 
-Live-fetched as public domain with `primaryImage`; object names are armchairs / side chair.
+## Relevance review (launch subjects)
 
-## Met quirks noted
+| Subject | Sample size | Pass rate | Result | Notes |
+| --- | --- | --- | --- | --- |
+| _ | ≤12 | _ | _ | _ |
 
-- No API key; no env vars.
-- Search returns IDs only; object fetch is required for eligibility and images.
-- `hasImages=true` does not imply open-access JPEG availability.
-- Missing optional fields often arrive as empty strings.
-- Object endpoint can be slow (~15–25s cold); BFF timeout/retry must account for this.
-- Prefer `/v1.1/search`; `/v1/search` retires 1 Oct 2026.
+## AIC quirks to verify and document
+
+- Prefer data dumps for bulk copy/analysis; avoid deep pagination / scraping of the live API (>10k search results).
+- Live API: throttle to about one request per second when used; no API key required for public collection data.
+- Images are not in the dump — construct IIIF URLs from `image_id`; museum does not offer an image dump.
+- Schema of dump JSON mirrors the live API artwork resource; switching between dump and API should be straightforward.
+- `is_public_domain` must be filtered locally from the dump for the public-domain set.
+- Missing optional fields (description, some title arrays) are common; never invent metadata.
+- Generic catalog terms (`art`, `painting`, `paper`, `people`, etc.) must be excluded or down-weighted for Connections.
+
+## Out of scope for this audit
+
+- The Met Collection API and any `data/subjects.json` Met object-ID pools from the previous exhibition-maker direction.
+- Multi-museum fusion.
