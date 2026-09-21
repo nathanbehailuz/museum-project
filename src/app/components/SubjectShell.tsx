@@ -92,7 +92,9 @@ export default function SubjectShell({ subject, epochs = [], children }: Props) 
         <div className={styles.shellHeaderInner}>
           <div className={styles.shellTopRow}>
             <div className={styles.shellBrandBlock}>
-              <p className={styles.shellBrand}>The Met Archive</p>
+              <Link href="/" className={styles.shellBrand}>
+                The Met Archive
+              </Link>
             </div>
 
             <nav className={styles.shellNav} aria-label="Subject views">

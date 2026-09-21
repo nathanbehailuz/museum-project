@@ -284,6 +284,11 @@
   color: var(--on-surface);
   margin: 0;
   line-height: 1.2;
+  text-decoration: none;
+}
+
+.shellBrand:hover {
+  color: var(--primary);
 }
 
 .shellSubject {

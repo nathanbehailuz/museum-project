@@ -168,6 +168,10 @@ Live URL: https://museum-exhibition-iota.vercel.app
 
 ## Session notes
 
+### 2026-09-21 (Shell brand → home)
+
+- Subject shell “The Met Archive” brand is a link to `/`.
+
 ### 2026-09-21 (Submission polish: skeletons, states, README)
 
 - Replaced raw “Loading…” Suspense/map/inspection copy with shimmer skeletons (`MuseumSkeletons` + `skeletons.module.css`) using existing `--skeleton` tokens.
