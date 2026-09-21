@@ -3,7 +3,7 @@
 Searchable digital museum of everyday things in art — **The Metropolitan Museum of Art** catalog indexed in Supabase. Pitch: *What do you want to find in art?*
 
 API docs: https://metmuseum.github.io/  
-Product docs: `docs/PROJECT_BRIEF.md`, `docs/prd.md`, `docs/IMPLEMENTATION_PLAN.md`.
+Product docs: `docs/DOCUMENTATION.md` (API / architecture / advanced / testing), `docs/PROJECT_BRIEF.md`, `docs/prd.md`, `docs/IMPLEMENTATION_PLAN.md`.
 
 **Live:** https://museum-exhibition-iota.vercel.app  
 Example: `/subject/flower/journey`
@@ -101,4 +101,4 @@ npm run lint
 npm run build
 ```
 
-Manual smoke: home search → Flower journey → epoch chip → artwork inspect → Connections. See `BUILD_LOG.md` for phase tables and known limitations.
+Manual smoke: home search → Flower journey → epoch chip → artwork inspect → Connections. See `docs/DOCUMENTATION.md` and `BUILD_LOG.md`.
