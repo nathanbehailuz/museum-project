@@ -1,12 +1,12 @@
 # Parked: Full Met Open Access CSV → Supabase load
 
-**Status:** Parked — move on with the partial / API-slice index.  
-**Date:** 2026-09-19  
-**Product impact:** None for launch. Flower / landscape / animal stay `journey_ready` on the current index.
+**Status:** Superseded 2026-09-20 — stopped the overnight API crawl. Product now uses CSV **tag index** (`npm run ingest:tags`) plus **on-demand** object fetch when a subject is opened.  
+**Date:** 2026-09-19 (parked); 2026-09-20 (full crawl started, then replaced)  
+**Product impact:** Search covers dump tags immediately. Images/metadata cache as people visit subjects.
 
 ## One-line summary
 
-Enriching **139,568** eligible Met Open Access objects into Supabase cannot finish at a practical speed: Collection API / Incapsula **403**s force concurrency 1, multi-day wall time, and background loaders keep dying. Resume via checkpoint later if a full catalog is needed.
+Enriching **139,568** eligible objects up front is inefficient (one live API GET per object, Incapsula 403s, ~30h). The dump is still used: load tags into `object_tags`, fetch `/objects/{id}` only for uncached IDs when someone opens that subject (cap 8 per visit).
 
 ## Symptoms
 
@@ -32,19 +32,11 @@ Enriching **139,568** eligible Met Open Access objects into Supabase cannot fini
 - `admin_truncate_index` RPC; gitignored CSV + checkpoints
 - Soft refresh path for existing rows (`ingest:refresh`) — separate from this bulk enrich
 
-## Current checkpoint (at park time)
+## Checkpoint
 
-```json
-{
-  "truncated": true,
-  "nextIndex": 480,
-  "updated": 478,
-  "skipped": 0,
-  "fetchFailed": 2
-}
-```
+Parked 2026-09-19 at `nextIndex` 480 / 478 upserted. Resumed 2026-09-20 without truncate; live progress is in `data/met/csv-load-checkpoint.json` and `data/met/csv-load.log`.
 
-See also: `data/met/csv-filter-summary.json`, `data/met/csv-load.log`, `data/met/csv-load-checkpoint.json`.
+See also: `data/met/csv-filter-summary.json`.
 
 ## Resume later (when ready)
 

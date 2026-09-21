@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import SubjectSearch from "./components/SubjectSearch";
+import HomeCatalogGraph from "./components/HomeCatalogGraph";
 import ArtworkImage from "./components/ArtworkImage";
 import styles from "./components/museum.module.css";
 import {
   getArtworksByIds,
+  getCatalogGraph,
   getTermBySlug,
   mapArtwork,
   mapTerm,
@@ -13,7 +15,7 @@ import {
 import { formatDateDisplay, formatSubjectMeta, formatYear } from "@/lib/formatDate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { subjectPath } from "@/lib/subjectUrlState";
-import type { ArtworkCard, SubjectSummary } from "@/lib/aic/apiTypes";
+import type { ArtworkCard, CatalogGraphEdge, CatalogGraphNode, SubjectSummary } from "@/lib/aic/apiTypes";
 
 const FEATURED_SLUG = "flower";
 
@@ -42,61 +44,6 @@ async function loadFeaturedWorks(termId: string, limit = 6): Promise<ArtworkCard
     .map((id) => byId.get(id))
     .filter(Boolean)
     .map((r) => mapArtwork(r!));
-}
-
-function AmbientConstellation({ works }: { works: ArtworkCard[] }) {
-  const slots = [
-    { left: "6%", top: "18%", size: 112 },
-    { left: "22%", top: "58%", size: 88 },
-    { left: "72%", top: "14%", size: 128 },
-    { left: "84%", top: "52%", size: 96 },
-    { left: "58%", top: "68%", size: 80 },
-    { left: "38%", top: "22%", size: 72 },
-  ];
-
-  return (
-    <div className={styles.homeAmbient} aria-hidden="true">
-      <div className={styles.homeAmbientGlow} />
-      <div className={styles.homeDotGrid} />
-      <svg className={styles.homeAmbientSvg} viewBox="0 0 100 100" preserveAspectRatio="none">
-        <path
-          d="M 12 28 Q 30 55 48 40 Q 68 22 82 48"
-          fill="none"
-          stroke="rgba(242,202,80,0.22)"
-          strokeWidth="0.35"
-          strokeDasharray="1.2 1.4"
-        />
-      </svg>
-      {works.slice(0, 6).map((w, i) => {
-        const slot = slots[i] ?? slots[0];
-        return (
-          <div
-            key={w.sourceId}
-            className={styles.homeAmbientNode}
-            style={{
-              left: slot.left,
-              top: slot.top,
-              width: slot.size,
-            }}
-          >
-            <div className={styles.homeAmbientThumb}>
-              <ArtworkImage
-                src={w.imageUrl}
-                alt=""
-                width={w.imageWidth}
-                height={w.imageHeight}
-              />
-              <span className={styles.homeAmbientDate}>
-                {w.dateStart != null
-                  ? formatYear(w.dateStart)
-                  : formatDateDisplay(w.dateDisplay).slice(0, 10)}
-              </span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 function MiniTimeline({ works }: { works: ArtworkCard[] }) {
@@ -177,6 +124,8 @@ async function HomeBody() {
   let featuredTerm = null as Awaited<ReturnType<typeof getTermBySlug>>;
   let featuredWorks: ArtworkCard[] = [];
   let subjects: SubjectSummary[] = [];
+  let graphNodes: CatalogGraphNode[] = [];
+  let graphEdges: CatalogGraphEdge[] = [];
 
   try {
     featuredTerm = await getTermBySlug(FEATURED_SLUG);
@@ -184,6 +133,9 @@ async function HomeBody() {
       featuredWorks = await loadFeaturedWorks(featuredTerm.id, 6);
     }
     subjects = (await suggestJourneyReady(6)).map(mapTerm);
+    const graph = await getCatalogGraph();
+    graphNodes = graph.nodes;
+    graphEdges = graph.edges;
   } catch {
     return (
       <p className={styles.muted}>
@@ -196,10 +148,6 @@ async function HomeBody() {
 
   return (
     <>
-      {featuredWorks.length > 0 && (
-        <AmbientConstellation works={featuredWorks} />
-      )}
-
       <div className={styles.homeHero}>
         <p className={styles.eyebrow}>The Metropolitan Museum of Art</p>
         <h1 className={styles.brand}>The Met Archive</h1>
@@ -212,6 +160,10 @@ async function HomeBody() {
           <SubjectSearch />
         </Suspense>
       </div>
+
+      {graphNodes.length > 0 && (
+        <HomeCatalogGraph nodes={graphNodes} edges={graphEdges} />
+      )}
 
       {featured && (
         <section

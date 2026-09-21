@@ -664,7 +664,7 @@
 
 .homePage {
   position: relative;
-  max-width: 960px;
+  max-width: min(1280px, 100%);
   padding-top: 2rem;
   padding-bottom: 4rem;
 }
@@ -673,7 +673,7 @@
   position: relative;
   z-index: 2;
   max-width: 36rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .searchPrompt {
@@ -683,66 +683,6 @@
   line-height: 1.25;
   margin: 0 0 0.65rem;
   color: var(--on-surface);
-}
-
-.homeAmbient {
-  position: absolute;
-  inset: 0 0 auto;
-  height: min(72vh, 640px);
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.homeAmbientGlow {
-  position: absolute;
-  top: 10%;
-  right: 8%;
-  width: 28rem;
-  height: 28rem;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  filter: blur(90px);
-}
-
-.homeDotGrid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.12;
-  background-image: radial-gradient(circle, var(--tertiary) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: linear-gradient(to bottom, black 40%, transparent 95%);
-}
-
-.homeAmbientSvg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.homeAmbientNode {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  opacity: 0.88;
-}
-
-.homeAmbientThumb {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: 0.35rem;
-  background: var(--surface-low);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-}
-
-.homeAmbientThumb img,
-.homeAmbientThumb > div {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  aspect-ratio: unset !important;
 }
 
 .homeAmbientDate {

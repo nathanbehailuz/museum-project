@@ -36,6 +36,7 @@ Left out to keep the product small: accounts, database, private collections, mul
 
 - Decision (2026-09-19 Phase 1): use existing empty Supabase project in org `museum-project` rather than creating a second paid project ($0/mo).
 - Decision: Phase 1 sample = AIC **getting-started** ID universe + **live API enrich** (not full S3 dump yet). Getting-started alone lacks subjects/PD/images.
+- Decision (2026-09-21): Connections only link `journey_ready` ↔ `journey_ready` (browse_only spokes dropped). Homepage Collection map shows all dump-deep subjects (`catalog_work_count ≥ 8`) with sparse ready-only edges. Generic blocklist keeps medium/century/nationality; depicted people allowed. `journeyMinWorks` = 5.
 - Decision: blocklist generics/techniques (`painting`, `oil on canvas`, fairs, centuries) so journey-ready favors concrete nouns (flower, landscape, animal, …).
 - Decision (2026-09-19): pivot product from Met three-work exhibition maker to AIC dump–indexed subject museum (Journey / All Works / Connections) with Supabase. Alternative considered: finish Met Phase 4–5 then expand; rejected because the assessment story and data model are a different product. Docs updated first; code still Met until ingest phase.
 - Decision: switch from Art Institute of Chicago to The Met Collection API because it requires no key and exposes direct JPEG URLs. Alternative considered: keep AIC; rejected after product direction chose Met. **Superseded by 2026-09-19 pivot back to AIC dump + Supabase.**
@@ -138,9 +139,10 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Preview deployments may have Vercel SSO; production alias is public.
 - Met pivot live DDL applied; soft refresh populates `image_url` / `image_url_small` (18/98 Met object fetches failed on last refresh — re-run `ingest:refresh` to backfill).
 - Soft refresh does not rebuild terms; use full `npm run ingest` (or clean TRUNCATE reload) to expand subjects.
-- **Full Met CSV enrich parked:** 139,568 eligible IDs, checkpoint ~480 done; Incapsula 403 forces concurrency 1 and multi-day runtime. Details + resume steps: [docs/parked-met-csv-load.md](docs/parked-met-csv-load.md). Ship on partial/API-slice index.
+- **On-demand Met cache:** CSV tags live in `object_tags` (~237k rows, 1109 subjects). Opening a subject fetches up to 8 missing objects and caches them. Overnight 139k crawl stopped (~2673 artworks already cached). Production needs `SUPABASE_SERVICE_ROLE_KEY` on the server for first-visit enrich.
 - Subject UI is two pages only (chronological constellation + connections graph); All Works route redirects to journey.
-
+- Homepage Collection map shows ~891 dump-deep subjects; gold edges only link current journey_ready pairs (sparse until more subjects enrich past validation).
+- Connections ignore browse_only targets (e.g. George Washington no longer appears on Animal/Flower). Re-run `npm run ingest:connections` to purge old edges from DB.
 ## Time spent
 
 | Phase | Time | Notes |
@@ -153,9 +155,58 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Phase 2 connections + periods | ~0.5–1 h | Scoring module, script, verify |
 | Phase 3 UI on indexed data | ~2–2.5 h | BFF, search, journey/works/connections, deploy |
 | Phase 4 Met index refresh | ~0.5 h | Soft refresh script + docs; live smoke |
-| Total | ~12.5–15 h | Through Met Phase 4 |
+| Full catalog ingest resume | ~0.5 h | Started then stopped; replaced by on-demand |
+| On-demand tag index + enrich | ~1 h | object_tags, lazy Met fetch, chair journey_ready |
+| Homepage catalog graph + tighter edges | ~1 h | 891-node map; journey_ready-only links; generics |
+| Total | ~15–17.5 h | On-demand cache, not full dump crawl |
 
 ## Session notes
+
+### 2026-09-21 (Homepage catalog graph + journey_ready-only edges)
+
+- Removed floating flower ambient thumbs from the homepage.
+- Added **Collection map**: React Flow graph of dump-deep subjects (`catalog_work_count ≥ 8`, ~891 nodes). Journey-ready nodes use cached thumbs; others use letter glyphs. Edges only between journey_ready pairs. Click → subject journey. No Met API on home load.
+- Connections: `eligibleTarget` requires `journey_ready` (no browse_only spokes). Kept top-K 8. API/page filter stored edges by target status until recompute.
+- Generics tightened: still block medium/technique/century/nationality; allow depicted people (`man`, `woman`, `figure`, …).
+- `journeyMinWorks` lowered 8 → 5 (does not change current 6 journey_ready subjects; horse/tree still fail artist/bucket bars).
+- Verified: Vitest 39/39; home shows 891 nodes; Flower node click → `/subject/flower/journey`; Animal connections SSR only Flower (no Washington); Flower API connections = bird + animal.
+
+### 2026-09-21 (Connections: click node for shared works)
+
+- Removed the related-subject chip row under the graph. Shared works appear only after clicking a node.
+- Dropped the “View shared works” control; node click is the selector.
+- Verified locally on Flower: no chip row; click Bird → “72 works tagged with both Flower and Bird”; click Coat Of Arm → “47 works tagged with both Flower and Coat Of Arm”.
+
+### 2026-09-20 (Connections = React Flow graph; BCE epochs)
+
+- Replaced the CSS/SVG hub with **React Flow** (`@xyflow/react`): real nodes + straight edges. Edge thickness scales with shared-work count.
+- Current subject is the same thumbnail card as related nodes, with a gold border. Clicking a related node still selects it.
+- Epoch chips use `formatYearRange` so `-50 – -1` reads **50 BCE–1 BCE**.
+- Verified locally: Flower connections (edges attach to nodes; hub gold border); Flower journey epoch “50 BCE–1 BCE”. Tests 38/38.
+
+### 2026-09-20 (Connections graph: no mid-edge labels)
+
+- Removed the floating “N shared works” labels on the hub edges. Count still sits under each related-subject thumbnail.
+- Hub–spoke lines are solid gold (were dashed/faint, so they disappeared on the dark field).
+- Verified locally on `/subject/tulip/connections`: Flower and Bird connect to Tulip with visible lines; mid labels gone.
+
+### 2026-09-20 (On-demand cache instead of 139k crawl)
+
+- Stopped the overnight Collection API crawl (~2.6k artworks in). Replaced with: CSV **tag index** in `object_tags` (236,908 rows, 1,109 slugs, no Met API) + fetch/cache **8 objects per first visit**.
+- Schema: `catalog_work_count` on `terms`; RLS read-only `object_tags`. Load: `npm run ingest:tags`.
+- `ensureSubjectEnriched(slug)` uses service role: DB first, pick uncached IDs from the dump, GET `/objects/{id}`, upsert, rebuild that subject’s periods/connections.
+- Search matches dump tags (not only journey_ready). Chair: 0 cached → 16 works, `journey_ready`, 1267–1880. Second visits skip once 8+ are cached.
+- Flower/landscape/animal/bird stay journey_ready. Bulk `ingest:csv:all` is optional, not required.
+- Verified: `npm test` 37/37; tag load; chair enrich; **not** claiming production Vercel has service_role yet.
+
+### 2026-09-20 (Resume full Met catalog load)
+
+- User asked to load **all** eligible Open Access objects (139,568), not the parked ~478-row slice.
+- Did **not** set `MET_CSV_FRESH=1` — resumed from `csv-load-checkpoint.json` (`nextIndex` 480, existing `ingestion_runs` id).
+- Hardened `scripts/ingest/load-csv.ts`: truncate only on fresh flag; skip IDs already in `artworks`; longer 403/HTML backoff; abort-and-retry a batch if ≥25% fetches fail (checkpoint does not skip those IDs); default concurrency 1 / gap 500ms; terms rebuild every 10k.
+- `rebuildTermsAndLinks` now paginates `artworks`/`terms` so a full catalog is not capped at PostgREST’s 1000-row default. `finishIngestionRun` writes counts when the job ends.
+- Supervisor `npm run ingest:csv:all` (`scripts/ingest/run-csv-load.sh`) retries on crash, then `ingest:connections`. Running under `caffeinate -i`.
+- Verified live: progress 480 → 560; Supabase `artworks` 478 → 558, all with `image_url`; ETA ~31h. **Not complete** — machine must stay awake; terms/connections rebuild still pending at end.
 
 ### 2026-09-19 (Homepage + Journey/Connections polish)
 

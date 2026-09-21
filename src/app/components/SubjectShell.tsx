@@ -158,7 +158,7 @@ export default function SubjectShell({ subject, epochs = [], children }: Props) 
                 }
               >
                 {ep.beginYear != null && ep.endYear != null
-                  ? `${ep.beginYear} – ${ep.endYear}`
+                  ? formatYearRange(ep.beginYear, ep.endYear)
                   : ep.label}
               </Link>
             ))}

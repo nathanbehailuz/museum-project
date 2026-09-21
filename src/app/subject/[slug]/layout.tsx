@@ -6,8 +6,11 @@ import {
   mapTerm,
   suggestJourneyReady,
 } from "@/lib/aic/queries";
+import { enrichSubjectOnce } from "@/lib/index/enrichOnce";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SuggestionList } from "./helpers";
+
+export const maxDuration = 60;
 
 type Props = {
   children: React.ReactNode;
@@ -16,6 +19,12 @@ type Props = {
 
 export default async function SubjectLayout({ children, params }: Props) {
   const { slug } = await params;
+  try {
+    await enrichSubjectOnce(slug);
+  } catch (err) {
+    console.error("enrich failed", slug, err);
+  }
+
   let term;
   try {
     term = await getTermBySlug(slug);
@@ -46,7 +55,12 @@ export default async function SubjectLayout({ children, params }: Props) {
     );
   }
 
-  if (term.status === "unavailable") {
+  const catalog = term.catalog_work_count ?? 0;
+  if (
+    term.status === "unavailable" &&
+    term.qualifying_work_count === 0 &&
+    catalog === 0
+  ) {
     const suggestions = (await suggestJourneyReady(6)).map(mapTerm);
     const subject = mapTerm(term);
     return (

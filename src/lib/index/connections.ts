@@ -46,7 +46,7 @@ function isAliasPair(a: TermMeta, b: TermMeta): boolean {
 
 function eligibleTarget(term: TermMeta): boolean {
   if (isGenericCanonical(term.canonical)) return false;
-  if (term.status === "unavailable") return false;
+  if (term.status !== "journey_ready") return false;
   return true;
 }
 

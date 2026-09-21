@@ -27,7 +27,7 @@ const BUCKET = 50;
 
 /** Hard thresholds from product brief (tune after dump analysis). */
 export const THRESHOLDS = {
-  journeyMinWorks: 8,
+  journeyMinWorks: 5,
   browseMinWorks: 3,
   minYearSpan: 50,
   minBuckets: 3,

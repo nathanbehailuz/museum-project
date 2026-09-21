@@ -16,7 +16,11 @@ export function SuggestionList({ suggestions }: Props) {
         <li key={s.slug}>
           <Link href={subjectPath(s.slug, "journey")}>
             {s.displayLabel} ·{" "}
-            {formatSubjectMeta(s.qualifyingWorkCount, s.dateMin, s.dateMax)}
+            {formatSubjectMeta(
+              s.qualifyingWorkCount || s.catalogWorkCount,
+              s.dateMin,
+              s.dateMax,
+            )}
           </Link>
         </li>
       ))}

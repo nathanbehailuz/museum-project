@@ -50,4 +50,5 @@ data/met/csv-load-checkpoint.json
 data/met/csv-filter-summary.json
 data/met/csv-load-summary.json
 data/met/csv-load.log
+data/met/csv-load.pid
 data/met/eligible-priority-summary.json

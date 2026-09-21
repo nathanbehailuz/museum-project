@@ -5,6 +5,8 @@ import {
   getTermBySlug,
   mapArtwork,
 } from "@/lib/aic/queries";
+import { enrichSubjectOnce } from "@/lib/index/enrichOnce";
+import { CATALOG_EVIDENCE } from "@/lib/index/enrichIds";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parseSubjectSearchParams } from "@/lib/subjectUrlState";
 
@@ -18,6 +20,7 @@ export default async function ConnectionsPage({
   searchParams,
 }: Props) {
   const { slug } = await params;
+  await enrichSubjectOnce(slug);
   const sp = await searchParams;
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(sp)) {
@@ -46,14 +49,16 @@ export default async function ConnectionsPage({
     const { data: targets } = targetIds.length
       ? await supabase
           .from("terms")
-          .select("id, slug, display_label, canonical")
+          .select("id, slug, display_label, canonical, status")
           .in("id", targetIds)
+          .eq("status", "journey_ready")
       : {
           data: [] as {
             id: string;
             slug: string;
             display_label: string;
             canonical: string;
+            status: string;
           }[],
         };
 
@@ -68,19 +73,38 @@ export default async function ConnectionsPage({
     const samples = await getArtworksByIds(allSampleIds);
     const sampleById = new Map(samples.map((a) => [a.id, a]));
 
-    const connections = (edges ?? []).map((e) => {
+    const { data: hubPeriods } = await supabase
+      .from("term_periods")
+      .select("featured_artwork_ids")
+      .eq("term_id", term.id)
+      .order("period_index", { ascending: true })
+      .limit(4);
+    const hubIds = [
+      ...new Set(
+        (hubPeriods ?? []).flatMap(
+          (p) => (p.featured_artwork_ids as string[]) ?? [],
+        ),
+      ),
+    ].slice(0, 1);
+    const hubRows = await getArtworksByIds(hubIds);
+    const hubSample = hubRows[0] ? mapArtwork(hubRows[0]) : null;
+
+    const connections = (edges ?? []).flatMap((e) => {
       const t = targetById.get(e.target_term_id as string);
+      if (!t) return [];
       const ids = (e.sample_artwork_ids as string[]) ?? [];
-      return {
-        targetSlug: t?.slug ?? "",
-        targetLabel: t?.display_label ?? t?.canonical ?? "",
-        sharedWorkCount: e.shared_work_count as number,
-        connectionScore: Number(e.connection_score),
-        samples: ids
-          .map((id) => sampleById.get(id))
-          .filter(Boolean)
-          .map((row) => mapArtwork(row!)),
-      };
+      return [
+        {
+          targetSlug: t.slug,
+          targetLabel: t.display_label ?? t.canonical ?? "",
+          sharedWorkCount: e.shared_work_count as number,
+          connectionScore: Number(e.connection_score),
+          samples: ids
+            .map((id) => sampleById.get(id))
+            .filter(Boolean)
+            .map((row) => mapArtwork(row!)),
+        },
+      ];
     });
 
     let intersection = [] as ReturnType<typeof mapArtwork>[];
@@ -101,12 +125,12 @@ export default async function ConnectionsPage({
             .from("artwork_terms")
             .select("artwork_id")
             .eq("term_id", term.id)
-            .in("evidence_source", ["subject", "term"]);
+            .in("evidence_source", [...CATALOG_EVIDENCE]);
           const { data: b } = await supabase
             .from("artwork_terms")
             .select("artwork_id")
             .eq("term_id", related.id)
-            .in("evidence_source", ["subject", "term"]);
+            .in("evidence_source", [...CATALOG_EVIDENCE]);
           const setB = new Set((b ?? []).map((r) => r.artwork_id as string));
           const shared = [
             ...new Set((a ?? []).map((r) => r.artwork_id as string)),
@@ -123,6 +147,7 @@ export default async function ConnectionsPage({
       <ConnectionsView
         subjectSlug={term.slug}
         subjectLabel={term.display_label}
+        hubSample={hubSample}
         connections={connections}
         related={state.related}
         intersection={intersection}

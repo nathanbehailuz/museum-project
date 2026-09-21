@@ -5,6 +5,7 @@ import {
   getTermBySlug,
   mapArtwork,
 } from "@/lib/aic/queries";
+import { enrichSubjectOnce } from "@/lib/index/enrichOnce";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parseSubjectSearchParams } from "@/lib/subjectUrlState";
 
@@ -15,6 +16,7 @@ type Props = {
 
 export default async function JourneyPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  await enrichSubjectOnce(slug);
   const sp = await searchParams;
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(sp)) {

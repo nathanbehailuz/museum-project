@@ -21,6 +21,10 @@ describe("formatYearRange", () => {
   it("joins span", () => {
     expect(formatYearRange(-5, 1891)).toBe("5 BCE–1891");
   });
+
+  it("does not show negative years for BCE ranges", () => {
+    expect(formatYearRange(-50, -1)).toBe("50 BCE–1 BCE");
+  });
 });
 
 describe("formatDateDisplay", () => {

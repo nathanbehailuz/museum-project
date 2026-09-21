@@ -103,6 +103,34 @@ describe("computeConnections", () => {
       ),
     ).toBe(true);
   });
+
+  it("only links journey_ready targets", () => {
+    const animal = term({ id: "t-animal", canonical: "animal" });
+    const flower = term({ id: "t-flower", canonical: "flower" });
+    const washington = term({
+      id: "t-gw",
+      canonical: "george washington",
+      status: "browse_only",
+    });
+
+    const artworkTermSets = new Map<string, Set<string>>([
+      ["a1", new Set(["t-animal", "t-flower", "t-gw"])],
+      ["a2", new Set(["t-animal", "t-flower", "t-gw"])],
+      ["a3", new Set(["t-animal", "t-flower", "t-gw"])],
+    ]);
+
+    const edges = computeConnections({
+      terms: [animal, flower, washington],
+      artworkTermSets,
+    });
+    expect(
+      edges.some(
+        (e) =>
+          e.source_term_id === "t-animal" && e.target_term_id === "t-flower",
+      ),
+    ).toBe(true);
+    expect(edges.some((e) => e.target_term_id === "t-gw")).toBe(false);
+  });
 });
 
 describe("computeTermPeriods", () => {

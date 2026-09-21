@@ -1,16 +1,21 @@
 import { NextResponse } from "next/server";
 import { getTermBySlug, mapArtwork, mapTerm } from "@/lib/aic/queries";
+import { CATALOG_EVIDENCE } from "@/lib/index/enrichIds";
+import { ensureSubjectEnriched } from "@/lib/index/enrich";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ slug: string }> };
 
 const PAGE_SIZE = 24;
 
+export const maxDuration = 60;
+
 export async function GET(request: Request, { params }: Params) {
   try {
     const { slug } = await params;
+    await ensureSubjectEnriched(slug);
     const term = await getTermBySlug(slug);
-    if (!term || term.status === "unavailable") {
+    if (!term || (term.status === "unavailable" && term.qualifying_work_count === 0)) {
       return NextResponse.json(
         { error: "not_found", message: "Subject not found." },
         { status: 404 },
@@ -31,7 +36,7 @@ export async function GET(request: Request, { params }: Params) {
       .from("artwork_terms")
       .select("artwork_id, evidence_source, relevance_weight")
       .eq("term_id", term.id)
-      .in("evidence_source", ["subject", "term"]);
+      .in("evidence_source", [...CATALOG_EVIDENCE]);
     if (linkErr) throw linkErr;
 
     const evidenceByArtwork = new Map<string, string>();

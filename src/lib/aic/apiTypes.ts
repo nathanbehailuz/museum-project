@@ -6,6 +6,7 @@ export type SubjectSummary = {
   displayLabel: string;
   status: TermStatus;
   qualifyingWorkCount: number;
+  catalogWorkCount: number;
   dateMin: number | null;
   dateMax: number | null;
   validationReasons: string[];
@@ -43,6 +44,19 @@ export type ConnectionEdgeCard = {
   sharedWorkCount: number;
   connectionScore: number;
   samples: ArtworkCard[];
+};
+
+export type CatalogGraphNode = {
+  slug: string;
+  label: string;
+  status: TermStatus;
+  imageUrl: string | null;
+};
+
+export type CatalogGraphEdge = {
+  source: string;
+  target: string;
+  sharedWorkCount: number;
 };
 
 export type ApiErrorBody = {

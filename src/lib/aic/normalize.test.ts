@@ -23,10 +23,11 @@ describe("normalizeTermLabel", () => {
 });
 
 describe("isLanguageRejected", () => {
-  it("rejects generics and stop words", () => {
+  it("rejects medium/century generics and stop words, not depicted people", () => {
     expect(isLanguageRejected("painting")).toBe("generic_catalog_term");
     expect(isLanguageRejected("the")).toBe("stop_word");
     expect(isLanguageRejected("window")).toBeNull();
+    expect(isLanguageRejected("man")).toBeNull();
   });
 });
 
@@ -78,10 +79,10 @@ function work(
 
 describe("validateTerm", () => {
   it("marks journey_ready when thresholds pass", () => {
-    const artworks = Array.from({ length: 8 }, (_, i) =>
+    const artworks = Array.from({ length: 5 }, (_, i) =>
       work({
         source_id: String(i),
-        date_start: 1700 + i * 20,
+        date_start: 1700 + i * 25,
         artist_title: `Maker ${i}`,
         artwork_type_title: i % 2 ? "Painting" : "Print",
       }),
@@ -95,7 +96,7 @@ describe("validateTerm", () => {
   });
 
   it("marks browse_only for shallow depth", () => {
-    const artworks = Array.from({ length: 5 }, (_, i) =>
+    const artworks = Array.from({ length: 4 }, (_, i) =>
       work({ source_id: String(i), date_start: 1800 + i * 30, artist_title: `A${i}` }),
     );
     const v = validateTerm({

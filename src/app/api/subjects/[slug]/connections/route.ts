@@ -5,15 +5,20 @@ import {
   mapArtwork,
   mapTerm,
 } from "@/lib/aic/queries";
+import { CATALOG_EVIDENCE } from "@/lib/index/enrichIds";
+import { ensureSubjectEnriched } from "@/lib/index/enrich";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ slug: string }> };
 
+export const maxDuration = 60;
+
 export async function GET(request: Request, { params }: Params) {
   try {
     const { slug } = await params;
+    await ensureSubjectEnriched(slug);
     const term = await getTermBySlug(slug);
-    if (!term || term.status === "unavailable") {
+    if (!term || (term.status === "unavailable" && term.qualifying_work_count === 0)) {
       return NextResponse.json(
         { error: "not_found", message: "Subject not found." },
         { status: 404 },
@@ -38,9 +43,18 @@ export async function GET(request: Request, { params }: Params) {
     const { data: targets } = targetIds.length
       ? await supabase
           .from("terms")
-          .select("id, slug, display_label, canonical")
+          .select("id, slug, display_label, canonical, status")
           .in("id", targetIds)
-      : { data: [] as { id: string; slug: string; display_label: string; canonical: string }[] };
+          .eq("status", "journey_ready")
+      : {
+          data: [] as {
+            id: string;
+            slug: string;
+            display_label: string;
+            canonical: string;
+            status: string;
+          }[],
+        };
 
     const targetById = new Map((targets ?? []).map((t) => [t.id, t]));
     const allSampleIds = [
@@ -51,20 +65,23 @@ export async function GET(request: Request, { params }: Params) {
     const samples = await getArtworksByIds(allSampleIds);
     const sampleById = new Map(samples.map((a) => [a.id, a]));
 
-    const connections = (edges ?? []).map((e) => {
-      const t = targetById.get(e.target_term_id as string);
-      const ids = (e.sample_artwork_ids as string[]) ?? [];
-      return {
-        targetSlug: t?.slug ?? "",
-        targetLabel: t?.display_label ?? t?.canonical ?? "",
-        sharedWorkCount: e.shared_work_count as number,
-        connectionScore: Number(e.connection_score),
-        samples: ids
-          .map((id) => sampleById.get(id))
-          .filter(Boolean)
-          .map((row) => mapArtwork(row!)),
-      };
-    });
+    const connections = (edges ?? [])
+      .map((e) => {
+        const t = targetById.get(e.target_term_id as string);
+        if (!t) return null;
+        const ids = (e.sample_artwork_ids as string[]) ?? [];
+        return {
+          targetSlug: t.slug,
+          targetLabel: t.display_label ?? t.canonical ?? "",
+          sharedWorkCount: e.shared_work_count as number,
+          connectionScore: Number(e.connection_score),
+          samples: ids
+            .map((id) => sampleById.get(id))
+            .filter(Boolean)
+            .map((row) => mapArtwork(row!)),
+        };
+      })
+      .filter(Boolean);
 
     let intersection: ReturnType<typeof mapArtwork>[] = [];
     if (relatedSlug) {
@@ -85,12 +102,12 @@ export async function GET(request: Request, { params }: Params) {
             .from("artwork_terms")
             .select("artwork_id")
             .eq("term_id", term.id)
-            .in("evidence_source", ["subject", "term"]);
+            .in("evidence_source", [...CATALOG_EVIDENCE]);
           const { data: b } = await supabase
             .from("artwork_terms")
             .select("artwork_id")
             .eq("term_id", related.id)
-            .in("evidence_source", ["subject", "term"]);
+            .in("evidence_source", [...CATALOG_EVIDENCE]);
           const setB = new Set((b ?? []).map((r) => r.artwork_id as string));
           const shared = [...new Set((a ?? []).map((r) => r.artwork_id as string))]
             .filter((id) => setB.has(id))

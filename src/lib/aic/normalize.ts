@@ -22,6 +22,7 @@ const STOP = new Set([
   "as",
 ]);
 
+/** Medium / technique / format / nationality / century — not depicted motifs. */
 const GENERIC = new Set([
   "art",
   "arts",
@@ -34,14 +35,6 @@ const GENERIC = new Set([
   "sculpture",
   "sculptures",
   "paper",
-  "people",
-  "person",
-  "figure",
-  "figures",
-  "man",
-  "woman",
-  "men",
-  "women",
   "work",
   "works",
   "object",
@@ -74,6 +67,7 @@ const GENERIC = new Set([
   "weaving",
   "plain weaving",
   "costume",
+  "european",
   "french",
   "italian",
   "british",

@@ -5,26 +5,30 @@ import {
   mapArtwork,
   mapTerm,
 } from "@/lib/aic/queries";
+import { ensureSubjectEnriched } from "@/lib/index/enrich";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ slug: string }> };
 
+export const maxDuration = 60;
+
 export async function GET(_request: Request, { params }: Params) {
   try {
     const { slug } = await params;
+    await ensureSubjectEnriched(slug);
     const term = await getTermBySlug(slug);
-    if (!term || term.status === "unavailable") {
+    if (!term) {
       return NextResponse.json(
         { error: "not_found", message: "Subject not available for a journey." },
         { status: 404 },
       );
     }
-    if (term.status === "browse_only") {
+    if (term.status === "unavailable" && term.qualifying_work_count === 0) {
       return NextResponse.json(
         {
           error: "unavailable",
           message:
-            "This subject is browse-only — not enough temporal breadth or depth for a chronological journey.",
+            "This subject does not have enough displayable works for a chronological journey.",
           subject: mapTerm(term),
         },
         { status: 404 },

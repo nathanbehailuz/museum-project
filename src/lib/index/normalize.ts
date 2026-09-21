@@ -4,10 +4,10 @@ const STOP = new Set([
   "a", "an", "the", "and", "or", "of", "in", "on", "at", "to", "for", "with", "from", "by", "as",
 ]);
 
+/** Medium / technique / format / nationality / century — not depicted motifs. */
 const GENERIC = new Set([
   "art", "arts", "painting", "paintings", "drawing", "drawings", "print", "prints",
-  "sculpture", "sculptures", "paper", "people", "person", "figure", "figures",
-  "man", "woman", "men", "women", "work", "works", "object", "objects", "image", "images",
+  "sculpture", "sculptures", "paper", "work", "works", "object", "objects", "image", "images",
   "photograph", "photographs", "canvas", "oil", "watercolor", "ink", "graphite",
   "american", "european", "french", "italian", "british", "dutch", "german", "spanish",
   "19th century", "20th century", "18th century", "17th century", "16th century",

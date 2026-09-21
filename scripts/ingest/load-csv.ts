@@ -21,6 +21,8 @@ import {
 } from "../../src/lib/index/normalize";
 import type { NormalizedArtwork } from "../../src/lib/index/types";
 import {
+  fetchAllRows,
+  finishIngestionRun,
   rebuildTermsAndLinks,
   startIngestionRun,
   upsertArtworks,
@@ -32,12 +34,13 @@ const MET = "https://collectionapi.metmuseum.org";
 const DATA = path.resolve(process.cwd(), "data/met");
 const CHECKPOINT = path.join(DATA, "csv-load-checkpoint.json");
 const ELIGIBLE = path.join(DATA, "eligible-ids.json");
-const CONCURRENCY = Number(process.env.MET_CSV_CONCURRENCY ?? "2");
+const CONCURRENCY = Number(process.env.MET_CSV_CONCURRENCY ?? "1");
 const MAX = process.env.MET_CSV_MAX
   ? Number(process.env.MET_CSV_MAX)
   : Infinity;
 const FRESH = process.env.MET_CSV_FRESH === "1";
-const FETCH_GAP_MS = Number(process.env.MET_CSV_GAP_MS ?? "200");
+const FETCH_GAP_MS = Number(process.env.MET_CSV_GAP_MS ?? "500");
+const REBUILD_EVERY = Number(process.env.MET_CSV_REBUILD_EVERY ?? "10000");
 
 type Checkpoint = {
   truncated: boolean;
@@ -45,8 +48,15 @@ type Checkpoint = {
   updated: number;
   skipped: number;
   fetchFailed: number;
+  already: number;
   runId: string | null;
 };
+
+type FetchResult =
+  | { kind: "ok"; norm: NormalizedArtwork }
+  | { kind: "skip" }
+  | { kind: "already" }
+  | { kind: "fail" };
 
 function requireEnv(name: string) {
   const v = process.env[name];
@@ -71,7 +81,7 @@ async function fetchJson<T>(url: string, attempts = 8): Promise<T | null> {
       });
       if (res.status === 404) return null;
       if (res.status === 403 || res.status === 429) {
-        const wait = 5000 * (i + 1);
+        const wait = Math.min(120_000, 8_000 * 2 ** i);
         console.warn(`backoff ${res.status} ${wait}ms`);
         await sleep(wait);
         continue;
@@ -79,7 +89,7 @@ async function fetchJson<T>(url: string, attempts = 8): Promise<T | null> {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       if (text.trimStart().startsWith("<")) {
-        const wait = 8000 * (i + 1);
+        const wait = Math.min(120_000, 8_000 * 2 ** i);
         console.warn(`html challenge; backoff ${wait}ms`);
         await sleep(wait);
         continue;
@@ -87,36 +97,37 @@ async function fetchJson<T>(url: string, attempts = 8): Promise<T | null> {
       return JSON.parse(text) as T;
     } catch (err) {
       lastErr = err;
-      await sleep(1000 * (i + 1));
+      await sleep(Math.min(30_000, 1_000 * 2 ** i));
     }
   }
   console.warn("give up", url, lastErr);
   return null;
 }
 
+function emptyCheckpoint(): Checkpoint {
+  return {
+    truncated: false,
+    nextIndex: 0,
+    updated: 0,
+    skipped: 0,
+    fetchFailed: 0,
+    already: 0,
+    runId: null,
+  };
+}
+
 async function loadCheckpoint(): Promise<Checkpoint> {
-  if (FRESH) {
-    return {
-      truncated: false,
-      nextIndex: 0,
-      updated: 0,
-      skipped: 0,
-      fetchFailed: 0,
-      runId: null,
-    };
-  }
+  if (FRESH) return emptyCheckpoint();
   try {
     const raw = await readFile(CHECKPOINT, "utf8");
-    return JSON.parse(raw) as Checkpoint;
-  } catch {
+    const parsed = JSON.parse(raw) as Partial<Checkpoint>;
     return {
-      truncated: false,
-      nextIndex: 0,
-      updated: 0,
-      skipped: 0,
-      fetchFailed: 0,
-      runId: null,
+      ...emptyCheckpoint(),
+      ...parsed,
+      already: parsed.already ?? 0,
     };
+  } catch {
+    return emptyCheckpoint();
   }
 }
 
@@ -180,24 +191,24 @@ async function main() {
 
   const eligible = await ensureEligibleIds();
   console.log(
-    `Eligible IDs to process: ${eligible.length} (concurrency=${CONCURRENCY})`,
+    `Eligible IDs to process: ${eligible.length} (concurrency=${CONCURRENCY} gap=${FETCH_GAP_MS}ms)`,
   );
 
   let cp = await loadCheckpoint();
   if (cp.nextIndex > eligible.length) cp.nextIndex = eligible.length;
 
-  if (!cp.truncated) {
+  if (FRESH) {
     console.log("Truncating index via admin_truncate_index()…");
     const { error } = await supabase.rpc("admin_truncate_index");
     if (error) throw error;
-    cp = {
-      truncated: true,
-      nextIndex: 0,
-      updated: 0,
-      skipped: 0,
-      fetchFailed: 0,
-      runId: null,
-    };
+    cp = emptyCheckpoint();
+    cp.truncated = true;
+    await saveCheckpoint(cp);
+  } else if (!cp.truncated) {
+    console.log(
+      "Resume without truncate (set MET_CSV_FRESH=1 to wipe). Marking truncated=true.",
+    );
+    cp.truncated = true;
     await saveCheckpoint(cp);
   }
 
@@ -209,24 +220,35 @@ async function main() {
     await saveCheckpoint(cp);
   }
 
+  const existingRows = await fetchAllRows<{ source_id: string }>(() =>
+    supabase.from("artworks").select("source_id").eq("source", "met"),
+  );
+  const existing = new Set(existingRows.map((r) => r.source_id));
+  console.log(`Already in index: ${existing.size}; resume at ${cp.nextIndex}`);
+
   const BATCH = 40;
+  const FAIL_THRESHOLD = Math.max(5, Math.ceil(BATCH * 0.25));
   let sinceRebuild = 0;
+  const sessionStart = Date.now();
+  const sessionIndex = cp.nextIndex;
+
   while (cp.nextIndex < eligible.length) {
     const slice = eligible.slice(cp.nextIndex, cp.nextIndex + BATCH);
     const start = cp.nextIndex;
     const norms = await mapPool(slice, CONCURRENCY, async (row) => {
+      if (existing.has(String(row.id))) return { kind: "already" } as const;
       const obj = await fetchJson<MetObjectApi>(
         `${MET}/public/collection/v1/objects/${row.id}`,
       );
       await sleep(FETCH_GAP_MS);
-      if (!obj) return { kind: "fail" as const };
+      if (!obj) return { kind: "fail" } as const;
       const norm = normalizeMetObject(obj);
       if (
         !norm ||
         !norm.is_public_domain ||
         !(norm.image_url || norm.image_url_small)
       ) {
-        return { kind: "skip" as const };
+        return { kind: "skip" } as const;
       }
       if (!norm.subject_titles.length && row.tags.length) {
         norm.subject_titles = row.tags;
@@ -240,24 +262,49 @@ async function main() {
     });
 
     const toUpsert: NormalizedArtwork[] = [];
+    let batchUpdated = 0;
+    let batchSkipped = 0;
+    let batchFailed = 0;
+    let batchAlready = 0;
     for (const r of norms) {
       if (r.kind === "ok") {
         toUpsert.push(r.norm);
-        cp.updated++;
-        sinceRebuild++;
-      } else if (r.kind === "skip") cp.skipped++;
-      else cp.fetchFailed++;
+        batchUpdated++;
+      } else if (r.kind === "skip") batchSkipped++;
+      else if (r.kind === "already") batchAlready++;
+      else batchFailed++;
     }
-    if (toUpsert.length) await upsertArtworks(supabase, toUpsert);
+    if (toUpsert.length) {
+      await upsertArtworks(supabase, toUpsert);
+      for (const a of toUpsert) existing.add(a.source_id);
+    }
 
+    cp.updated += batchUpdated;
+    cp.skipped += batchSkipped;
+    cp.already += batchAlready;
+    sinceRebuild += batchUpdated;
+
+    if (batchFailed >= FAIL_THRESHOLD) {
+      await saveCheckpoint(cp);
+      throw new Error(
+        `Too many fetch failures (${batchFailed}/${slice.length}) at index ${start}; restart will retry this batch`,
+      );
+    }
+
+    cp.fetchFailed += batchFailed;
     cp.nextIndex = start + slice.length;
     await saveCheckpoint(cp);
+
+    const doneSession = cp.nextIndex - sessionIndex;
+    const elapsedSec = Math.max(1, (Date.now() - sessionStart) / 1000);
+    const rate = doneSession / elapsedSec;
+    const remaining = eligible.length - cp.nextIndex;
+    const etaH = rate > 0 ? remaining / rate / 3600 : 0;
     console.log(
-      `progress ${cp.nextIndex}/${eligible.length} updated=${cp.updated} skipped=${cp.skipped} fail=${cp.fetchFailed}`,
+      `progress ${cp.nextIndex}/${eligible.length} updated=${cp.updated} already=${cp.already} skipped=${cp.skipped} fail=${cp.fetchFailed} eta~${etaH.toFixed(1)}h`,
     );
 
-    // Keep search/journey usable during multi-hour loads
-    if (sinceRebuild >= 2000) {
+    if (REBUILD_EVERY > 0 && sinceRebuild >= REBUILD_EVERY) {
       console.log("Periodic terms rebuild…");
       await rebuildTermsAndLinks(supabase);
       sinceRebuild = 0;
@@ -267,10 +314,21 @@ async function main() {
   console.log("API enrich complete — rebuilding terms…");
   const rebuilt = await rebuildTermsAndLinks(supabase);
 
+  if (cp.runId) {
+    await finishIngestionRun(supabase, cp.runId, {
+      artworks_upserted: cp.updated,
+      terms_upserted: rebuilt.terms,
+      artwork_terms_upserted: rebuilt.links,
+      journey_ready_count: rebuilt.journey_ready.length,
+      notes: `eligible=${eligible.length}; updated=${cp.updated}; already=${cp.already}; skipped=${cp.skipped}; fail=${cp.fetchFailed}`,
+    });
+  }
+
   const summary = {
     runId: cp.runId,
     eligible: eligible.length,
     updated: cp.updated,
+    already: cp.already,
     skipped: cp.skipped,
     fetchFailed: cp.fetchFailed,
     terms: rebuilt.terms,

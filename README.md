@@ -19,26 +19,23 @@ npm run dev
 
 ## Met ingest & refresh
 
-No museum API key. Images are hotlinked Met JPEGs (`images.metmuseum.org`). Ingest needs `SUPABASE_SERVICE_ROLE_KEY`.
+No museum API key. Images are hotlinked Met JPEGs (`images.metmuseum.org`). Server enrich needs `SUPABASE_SERVICE_ROLE_KEY` (never `NEXT_PUBLIC_`).
 
-### Full Open Access catalog (recommended)
+### On-demand cache (default)
 
-CSV has metadata only — JPEG URLs come from the Collection API. Expect a multi-hour first run; resume is automatic.
+The CSV dump is an **ID + tags index** (no JPEG URLs). Search uses that index. Opening a subject loads whatever is already in Supabase, fetches a small cap of missing objects from the Collection API, and caches them.
 
 ```bash
 npm run ingest:download      # ~318MB MetObjects.csv → data/met/
 npm run ingest:csv-filter    # PD + tags + begin date → eligible-ids.json
-MET_CSV_FRESH=1 npm run ingest:csv   # truncate + enrich + upsert + rebuild terms
-# Resume after interrupt / Incapsula backoff: npm run ingest:csv
-npm run ingest:rebuild-terms         # optional mid-load terms rebuild
-npm run ingest:connections
+npm run ingest:tags          # load object_tags + catalog_work_count (no Met API)
 ```
 
-Resume after interrupt: `npm run ingest:csv` (reads `csv-load-checkpoint.json`).  
-Smoke subset: `MET_CSV_MAX=500 MET_CSV_FRESH=1 npm run ingest:csv`.  
-Expect multi-hour runtime (~140k eligible IDs); Met may return temporary 403s — the loader backs off and retries.
+Production also needs `SUPABASE_SERVICE_ROLE_KEY` set on Vercel so first visits can cache. Repeat visits are DB-only.
 
-### API search slice (smaller)
+Optional full pre-cache (slow, ~30h, Incapsula 403s): `npm run ingest:csv` / `ingest:csv:all`. Not required for the product.
+
+### API search slice (smaller prefetch)
 
 ```bash
 npm run ingest

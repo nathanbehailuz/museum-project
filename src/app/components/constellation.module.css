@@ -423,7 +423,7 @@
 .hubWrap {
   position: relative;
   min-height: calc(100vh - 8rem);
-  overflow: hidden;
+  overflow-x: hidden;
   background: var(--surface-lowest);
 }
 
@@ -435,35 +435,113 @@
   min-height: 440px;
 }
 
+.graphCanvas {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: min(72vh, 720px);
+  min-height: 480px;
+}
+
+.graphCanvas :global(.react-flow) {
+  background: transparent;
+}
+
+.graphCanvas :global(.react-flow__node) {
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: auto !important;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.graphCanvas :global(.react-flow__node.selected) {
+  box-shadow: none;
+}
+
+.graphCanvas :global(.react-flow__edge-path) {
+  stroke: color-mix(in srgb, var(--primary) 82%, var(--secondary));
+}
+
+.graphCanvas :global(.react-flow__controls) {
+  box-shadow: none;
+  border: 1px solid var(--outline-variant);
+  overflow: hidden;
+  border-radius: 0.35rem;
+}
+
+.graphCanvas :global(.react-flow__controls-button) {
+  background: var(--surface-low);
+  border-bottom-color: var(--outline-variant);
+  fill: var(--on-surface);
+}
+
+.graphHandle {
+  opacity: 0;
+  width: 10px;
+  height: 10px;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%);
+  border: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+.graphNode,
+.graphNodeHub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 7rem;
+  cursor: pointer;
+}
+
+.graphNodeHub {
+  cursor: default;
+}
+
+.satCardHub {
+  width: 5.5rem;
+  height: 5.5rem;
+  padding: 0.3rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--surface-low) 90%, transparent);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  border: 1.5px solid var(--primary);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent),
+    0 0 22px rgba(212, 175, 55, 0.35),
+    0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.satCardHub img,
+.satCardHub > div {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.2rem;
+}
+
 .hubSvg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 1;
+  overflow: visible;
 }
 
 .hubEdge {
   fill: none;
-  stroke: url(#hubGrad);
-  stroke-width: 1.4;
-  stroke-dasharray: 4 3;
-  opacity: 0.7;
-}
-
-.hubEdgeLabel {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  padding: 0.1rem 0.4rem;
-  background: color-mix(in srgb, var(--surface-lowest) 90%, transparent);
-  border-radius: 0.2rem;
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--secondary);
-  white-space: nowrap;
+  stroke: color-mix(in srgb, var(--primary) 78%, var(--secondary));
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  opacity: 0.9;
 }
 
 .hubCenter {
@@ -580,37 +658,4 @@
     padding-left: 3rem;
     padding-right: 3rem;
   }
-}
-
-.listFallback {
-  position: relative;
-  z-index: 3;
-  padding: 1rem 1.5rem 2rem;
-}
-
-.listFallback ol {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.listFallback button,
-.listFallback a {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.65rem;
-  border: none;
-  border-radius: 0.25rem;
-  background: var(--surface-low);
-  color: var(--on-surface);
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.listFallback button[aria-pressed="true"] {
-  background: var(--primary-container);
-  color: var(--on-primary-container);
 }

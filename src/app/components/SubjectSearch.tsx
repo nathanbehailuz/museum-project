@@ -156,7 +156,7 @@ export default function SubjectSearch({
                 <span className={styles.suggestTitle}>{s.displayLabel}</span>
                 <span className={styles.suggestMeta}>
                   {formatSubjectMeta(
-                    s.qualifyingWorkCount,
+                    s.qualifyingWorkCount || s.catalogWorkCount,
                     s.dateMin,
                     s.dateMax,
                   )}

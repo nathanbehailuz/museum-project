@@ -71,55 +71,104 @@ export async function startIngestionRun(
   return data.id as string;
 }
 
+const PAGE = 1000;
+
+/** Paginate PostgREST selects so a full catalog is not capped at 1000 rows. */
+export async function fetchAllRows<T>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  query: () => any,
+): Promise<T[]> {
+  const rows: T[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await query().range(from, from + PAGE - 1);
+    if (error) throw error;
+    const batch = (data ?? []) as T[];
+    rows.push(...batch);
+    if (batch.length < PAGE) break;
+    from += PAGE;
+  }
+  return rows;
+}
+
+export async function finishIngestionRun(
+  supabase: SupabaseClient,
+  runId: string,
+  stats: {
+    artworks_upserted: number;
+    terms_upserted: number;
+    artwork_terms_upserted: number;
+    journey_ready_count: number;
+    notes?: string;
+  },
+) {
+  const { error } = await supabase
+    .from("ingestion_runs")
+    .update({
+      finished_at: new Date().toISOString(),
+      artworks_upserted: stats.artworks_upserted,
+      terms_upserted: stats.terms_upserted,
+      artwork_terms_upserted: stats.artwork_terms_upserted,
+      journey_ready_count: stats.journey_ready_count,
+      ...(stats.notes ? { notes: stats.notes } : {}),
+    })
+    .eq("id", runId);
+  if (error) throw error;
+}
+
 async function fetchAllMetArtworks(
   supabase: SupabaseClient,
 ): Promise<NormalizedArtwork[]> {
-  const PAGE = 1000;
-  const out: NormalizedArtwork[] = [];
-  let from = 0;
-  for (;;) {
-    const { data, error } = await supabase
+  type Row = {
+    source_id: string;
+    title: string | null;
+    artist_title: string | null;
+    date_start: number | null;
+    date_end: number | null;
+    date_display: string | null;
+    medium_display: string | null;
+    artwork_type_title: string | null;
+    image_url: string | null;
+    image_url_small: string | null;
+    image_id: string | null;
+    image_width: number | null;
+    image_height: number | null;
+    alt_text: string | null;
+    is_public_domain: boolean | null;
+    source_url: string | null;
+    subject_titles: string[] | null;
+    term_titles: string[] | null;
+    raw_department: string | null;
+  };
+  const rows = await fetchAllRows<Row>(() =>
+    supabase
       .from("artworks")
       .select(
         "source_id, title, artist_title, date_start, date_end, date_display, medium_display, artwork_type_title, image_url, image_url_small, image_id, image_width, image_height, alt_text, is_public_domain, source_url, subject_titles, term_titles, raw_department",
       )
-      .eq("source", "met")
-      .range(from, from + PAGE - 1);
-    if (error) throw error;
-    const batch = data ?? [];
-    for (const r of batch) {
-      out.push({
-        source: "met",
-        source_id: r.source_id as string,
-        title: (r.title as string | null) ?? null,
-        artist_title: (r.artist_title as string | null) ?? null,
-        date_start: (r.date_start as number | null) ?? null,
-        date_end: (r.date_end as number | null) ?? null,
-        date_display: (r.date_display as string | null) ?? null,
-        medium_display: (r.medium_display as string | null) ?? null,
-        artwork_type_title: (r.artwork_type_title as string | null) ?? null,
-        image_url:
-          (r.image_url as string | null) ??
-          (r.image_id as string | null) ??
-          null,
-        image_url_small:
-          (r.image_url_small as string | null) ??
-          (r.image_id as string | null) ??
-          null,
-        image_width: (r.image_width as number | null) ?? null,
-        image_height: (r.image_height as number | null) ?? null,
-        alt_text: (r.alt_text as string | null) ?? null,
-        is_public_domain: Boolean(r.is_public_domain),
-        source_url: (r.source_url as string) ?? "",
-        subject_titles: (r.subject_titles as string[]) ?? [],
-        term_titles: (r.term_titles as string[]) ?? [],
-        raw_department: (r.raw_department as string | null) ?? null,
-      });
-    }
-    if (batch.length < PAGE) break;
-    from += PAGE;
-  }
-  return out;
+      .eq("source", "met"),
+  );
+  return rows.map((r) => ({
+    source: "met" as const,
+    source_id: r.source_id,
+    title: r.title,
+    artist_title: r.artist_title,
+    date_start: r.date_start,
+    date_end: r.date_end,
+    date_display: r.date_display,
+    medium_display: r.medium_display,
+    artwork_type_title: r.artwork_type_title,
+    image_url: r.image_url ?? r.image_id,
+    image_url_small: r.image_url_small ?? r.image_id,
+    image_width: r.image_width,
+    image_height: r.image_height,
+    alt_text: r.alt_text,
+    is_public_domain: Boolean(r.is_public_domain),
+    source_url: r.source_url ?? "",
+    subject_titles: r.subject_titles ?? [],
+    term_titles: r.term_titles ?? [],
+    raw_department: r.raw_department,
+  }));
 }
 
 /**
@@ -190,29 +239,22 @@ export async function rebuildTermsAndLinks(
   }
   console.log(`Upserted ${termPayload.length} terms`);
 
-  const { data: artRows, error: artErr } = await supabase
-    .from("artworks")
-    .select("id, source_id")
-    .eq("source", "met");
-  if (artErr) throw artErr;
-  const idBySource = new Map(
-    (artRows ?? []).map((r) => [r.source_id as string, r.id as string]),
+  const artRows = await fetchAllRows<{ id: string; source_id: string }>(() =>
+    supabase.from("artworks").select("id, source_id").eq("source", "met"),
   );
+  const idBySource = new Map(artRows.map((r) => [r.source_id, r.id]));
 
-  const { data: termRows, error: termErr } = await supabase
-    .from("terms")
-    .select("id, canonical");
-  if (termErr) throw termErr;
-  const termIdByCanonical = new Map(
-    (termRows ?? []).map((t) => [t.canonical as string, t.id as string]),
+  const termRows = await fetchAllRows<{ id: string; canonical: string }>(() =>
+    supabase.from("terms").select("id, canonical"),
   );
+  const termIdByCanonical = new Map(termRows.map((t) => [t.canonical, t.id]));
 
   const artIds = [...idBySource.values()];
-  for (let i = 0; i < artIds.length; i += 50) {
+  for (let i = 0; i < artIds.length; i += 100) {
     const { error } = await supabase
       .from("artwork_terms")
       .delete()
-      .in("artwork_id", artIds.slice(i, i + 50));
+      .in("artwork_id", artIds.slice(i, i + 100));
     if (error) throw error;
   }
 

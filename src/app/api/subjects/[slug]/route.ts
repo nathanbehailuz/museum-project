@@ -4,12 +4,16 @@ import {
   mapTerm,
   suggestJourneyReady,
 } from "@/lib/aic/queries";
+import { ensureSubjectEnriched } from "@/lib/index/enrich";
 
 type Params = { params: Promise<{ slug: string }> };
+
+export const maxDuration = 60;
 
 export async function GET(_request: Request, { params }: Params) {
   try {
     const { slug } = await params;
+    await ensureSubjectEnriched(slug);
     const term = await getTermBySlug(slug);
     if (!term) {
       const suggestions = (await suggestJourneyReady(6)).map(mapTerm);
@@ -24,7 +28,7 @@ export async function GET(_request: Request, { params }: Params) {
     }
 
     const summary = mapTerm(term);
-    if (term.status === "unavailable") {
+    if (term.status === "unavailable" && term.qualifying_work_count === 0) {
       const suggestions = (await suggestJourneyReady(6)).map(mapTerm);
       return NextResponse.json(
         {
