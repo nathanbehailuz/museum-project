@@ -57,7 +57,7 @@ Images are not mirrored into Storage — we hotlink Met JPEGs and fall back UI-s
 **Backend-for-frontend + indexed cache (+ shareable URL state)**
 
 1. **BFF** — Routes like `/api/subjects`, `/api/subjects/[slug]/journey/works`, `/api/artworks/[sourceId]`, `/api/subjects/[slug]/connections` validate input, hide Supabase/Met shapes, and return stable cards for the UI.
-2. **Indexed cache** — The dump tag index makes autocomplete and journey-ready status possible without calling Met on every keystroke. Cached artwork rows make Journey chronological without waiting on the full catalog.
+2. **Indexed cache** — The dump tag index makes autocomplete and journey-ready status possible without calling Met on every keystroke. Cached artwork rows make Journey chronological without waiting on the full catalog. Search and the homepage graph only list subjects that are `journey_ready` **and** already have cached works; other dump subjects remain in Supabase for later enrich.
 3. **Server-side enrich** — `ensureSubjectEnriched` uses the service role only on the server: pick uncached IDs → Met object fetch → upsert → recompute periods. If the key is missing, enrich no-ops and the app still serves whatever is already in the DB.
 4. **Shareable URLs** — `subjectUrlState` encodes view, chapter, and artwork so Share / reload reconstructs the same place in the archive.
 

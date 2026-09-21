@@ -96,26 +96,24 @@ export async function searchTerms(q: string, limit = 12) {
   const cleaned = q.trim().replace(/%/g, "");
   const columns =
     "id, slug, canonical, display_label, status, qualifying_work_count, catalog_work_count, date_min, date_max, validation_reasons";
-  if (!cleaned) {
-    const { data, error } = await supabase
-      .from("terms")
-      .select(columns)
-      .eq("status", "journey_ready")
-      .order("qualifying_work_count", { ascending: false })
-      .limit(limit);
-    if (error) throw error;
-    return (data ?? []) as TermRow[];
-  }
 
-  const { data, error } = await supabase
+  // UI only surfaces journey_ready subjects that already have cached, plottable works.
+  // Dump-deep / uncached terms stay in the DB for later enrich.
+  let query = supabase
     .from("terms")
     .select(columns)
-    .or(
-      `canonical.ilike.%${cleaned}%,display_label.ilike.%${cleaned}%,slug.ilike.%${cleaned}%`,
-    )
-    .or("catalog_work_count.gt.0,qualifying_work_count.gt.0")
-    .order("catalog_work_count", { ascending: false })
+    .eq("status", "journey_ready")
+    .gt("qualifying_work_count", 0)
+    .order("qualifying_work_count", { ascending: false })
     .limit(limit);
+
+  if (cleaned) {
+    query = query.or(
+      `canonical.ilike.%${cleaned}%,display_label.ilike.%${cleaned}%,slug.ilike.%${cleaned}%`,
+    );
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as TermRow[];
 }
@@ -128,6 +126,7 @@ export async function suggestJourneyReady(limit = 6) {
       "id, slug, canonical, display_label, status, qualifying_work_count, catalog_work_count, date_min, date_max, validation_reasons",
     )
     .eq("status", "journey_ready")
+    .gt("qualifying_work_count", 0)
     .order("qualifying_work_count", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -162,9 +161,10 @@ export async function getArtworkBySourceId(sourceId: string) {
 }
 
 /**
- * Dump-deep subjects for the homepage catalog graph (no Met API).
- * Nodes: catalog_work_count >= 8, non-generic.
- * Edges: journey_ready ↔ journey_ready only (from object_tags co-occurrence).
+ * Homepage catalog graph (no Met API).
+ * Nodes: journey_ready + at least one cached qualifying work (non-generic).
+ * Uncached dump subjects remain in the DB for later enrich; they are not plotted.
+ * Edges: journey_ready ↔ journey_ready co-occurrence only.
  */
 export async function getCatalogGraph(): Promise<{
   nodes: CatalogGraphNode[];
@@ -179,14 +179,18 @@ export async function getCatalogGraph(): Promise<{
     display_label: string;
     status: SubjectSummary["status"];
     catalog_work_count: number;
+    qualifying_work_count: number;
   }[] = [];
 
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from("terms")
-      .select("id, slug, canonical, display_label, status, catalog_work_count")
-      .gte("catalog_work_count", 8)
-      .order("catalog_work_count", { ascending: false })
+      .select(
+        "id, slug, canonical, display_label, status, catalog_work_count, qualifying_work_count",
+      )
+      .eq("status", "journey_ready")
+      .gt("qualifying_work_count", 0)
+      .order("qualifying_work_count", { ascending: false })
       .range(from, from + PAGE - 1);
     if (error) throw error;
     const batch = data ?? [];
@@ -196,9 +200,7 @@ export async function getCatalogGraph(): Promise<{
 
   const filtered = termRows.filter((t) => !isGenericCanonical(t.canonical));
   const byId = new Map(filtered.map((t) => [t.id, t]));
-  const readyIds = new Set(
-    filtered.filter((t) => t.status === "journey_ready").map((t) => t.id),
-  );
+  const readyIds = new Set(filtered.map((t) => t.id));
 
   const edges: CatalogGraphEdge[] = [];
   const seenPair = new Set<string>();

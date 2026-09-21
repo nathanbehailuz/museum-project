@@ -50,11 +50,10 @@ export default async function SubjectLayout({ children, params }: Props) {
     );
   }
 
-  const catalog = term.catalog_work_count ?? 0;
+  // Keep uncached / browse_only terms in the DB; do not open an empty journey for them.
   if (
-    term.status === "unavailable" &&
-    term.qualifying_work_count === 0 &&
-    catalog === 0
+    term.status !== "journey_ready" ||
+    (term.qualifying_work_count ?? 0) <= 0
   ) {
     const suggestions = (await suggestJourneyReady(6)).map(mapTerm);
     const subject = mapTerm(term);
@@ -63,8 +62,8 @@ export default async function SubjectLayout({ children, params }: Props) {
         <div className={styles.pageInner}>
           <h1 className={styles.subjectTitle}>{subject.displayLabel}</h1>
           <p className={styles.muted}>
-            {subject.validationReasons.join(" ") ||
-              "Not enough displayable works for a subject page yet."}
+            This subject is not ready to explore yet — we have not cached enough
+            dated works. Try one of these instead.
           </p>
           <SuggestionList suggestions={suggestions} />
         </div>

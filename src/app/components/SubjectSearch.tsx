@@ -194,7 +194,6 @@ export default function SubjectSearch({
                       s.dateMin,
                       s.dateMax,
                     )}
-                    {s.status === "browse_only" ? " · browse only" : ""}
                   </span>
                 </button>
               </li>
