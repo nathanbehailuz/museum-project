@@ -78,7 +78,27 @@ function work(
 }
 
 describe("validateTerm", () => {
-  it("marks journey_ready when thresholds pass", () => {
+  it("marks journey_ready from catalog depth ≥ 8", () => {
+    const v = validateTerm({
+      canonical: "horse",
+      display_label: "Horse",
+      artworks: [],
+      catalog_work_count: 8,
+    });
+    expect(v.status).toBe("journey_ready");
+  });
+
+  it("marks browse_only when catalog depth is shallow", () => {
+    const v = validateTerm({
+      canonical: "bowl",
+      display_label: "Bowl",
+      artworks: [],
+      catalog_work_count: 4,
+    });
+    expect(v.status).toBe("browse_only");
+  });
+
+  it("marks journey_ready when legacy artwork thresholds pass", () => {
     const artworks = Array.from({ length: 5 }, (_, i) =>
       work({
         source_id: String(i),
@@ -95,7 +115,7 @@ describe("validateTerm", () => {
     expect(v.status).toBe("journey_ready");
   });
 
-  it("marks browse_only for shallow depth", () => {
+  it("marks browse_only for shallow legacy depth", () => {
     const artworks = Array.from({ length: 4 }, (_, i) =>
       work({ source_id: String(i), date_start: 1800 + i * 30, artist_title: `A${i}` }),
     );

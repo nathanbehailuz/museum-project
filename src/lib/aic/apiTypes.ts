@@ -50,7 +50,8 @@ export type CatalogGraphNode = {
   slug: string;
   label: string;
   status: TermStatus;
-  imageUrl: string | null;
+  /** True when this subject has at least one stored connection edge. */
+  linked: boolean;
 };
 
 export type CatalogGraphEdge = {

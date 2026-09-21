@@ -91,13 +91,22 @@ async function main() {
     }
   }
 
-  const termPayload = [...bySlug.entries()].map(([slug, t]) => ({
-    slug,
-    canonical: t.canonical,
-    display_label: t.display_label,
-    catalog_work_count: t.count,
-    updated_at: new Date().toISOString(),
-  }));
+  const termPayload = [...bySlug.entries()].map(([slug, t]) => {
+    const status =
+      t.count >= 8 ? ("journey_ready" as const) : ("browse_only" as const);
+    return {
+      slug,
+      canonical: t.canonical,
+      display_label: t.display_label,
+      catalog_work_count: t.count,
+      status,
+      validation_reasons:
+        status === "journey_ready"
+          ? ["catalog_depth_journey_ready"]
+          : [`catalog_depth_browse_${t.count}`],
+      updated_at: new Date().toISOString(),
+    };
+  });
 
   for (let i = 0; i < termPayload.length; i += 100) {
     const { error } = await supabase

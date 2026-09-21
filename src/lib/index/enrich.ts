@@ -10,7 +10,6 @@ import {
 } from "./normalize";
 import { computeTermPeriods } from "./periods";
 import { validateTerm } from "./validate";
-import { computeConnections, type ArtworkTermLink, type TermMeta } from "./connections";
 import type { NormalizedArtwork } from "./types";
 import {
   artworkWriteRow,
@@ -242,7 +241,7 @@ async function recomputeSubject(
 ) {
   const { data: term, error: termErr } = await supabase
     .from("terms")
-    .select("id, slug, canonical, display_label, aliases, status")
+    .select("id, slug, canonical, display_label, aliases, status, catalog_work_count")
     .eq("slug", slug)
     .maybeSingle();
   if (termErr) throw termErr;
@@ -286,6 +285,7 @@ async function recomputeSubject(
     canonical: term.canonical as string,
     display_label: term.display_label as string,
     artworks,
+    catalog_work_count: (term.catalog_work_count as number) ?? 0,
   });
 
   const { error: upErr } = await supabase
@@ -316,73 +316,8 @@ async function recomputeSubject(
     if (error) throw error;
   }
 
-  await recomputeConnectionsForTerm(supabase, term.id as string, artworkIds);
-}
-
-async function recomputeConnectionsForTerm(
-  supabase: SupabaseClient,
-  termId: string,
-  artworkIds: string[],
-) {
-  if (!artworkIds.length) {
-    await supabase.from("term_connections").delete().eq("source_term_id", termId);
-    return;
-  }
-
-  const linkRows: ArtworkTermLink[] = [];
-  for (let i = 0; i < artworkIds.length; i += 80) {
-    const { data, error } = await supabase
-      .from("artwork_terms")
-      .select("artwork_id, term_id, evidence_source")
-      .in("artwork_id", artworkIds.slice(i, i + 80))
-      .in("evidence_source", [...CATALOG_EVIDENCE]);
-    if (error) throw error;
-    for (const row of data ?? []) {
-      linkRows.push({
-        artwork_id: row.artwork_id as string,
-        term_id: row.term_id as string,
-        evidence_source: row.evidence_source as string,
-      });
-    }
-  }
-
-  const termIds = [...new Set(linkRows.map((l) => l.term_id))];
-  const { data: terms, error: tErr } = await supabase
-    .from("terms")
-    .select("id, canonical, slug, aliases, status")
-    .in("id", termIds);
-  if (tErr) throw tErr;
-  const termMeta: TermMeta[] = (terms ?? []).map((t) => ({
-    id: t.id as string,
-    canonical: t.canonical as string,
-    slug: t.slug as string,
-    aliases: (t.aliases as string[]) ?? [],
-    status: t.status as TermMeta["status"],
-  }));
-
-  const artworkTermSets = new Map<string, Set<string>>();
-  for (const l of linkRows) {
-    let set = artworkTermSets.get(l.artwork_id);
-    if (!set) {
-      set = new Set();
-      artworkTermSets.set(l.artwork_id, set);
-    }
-    set.add(l.term_id);
-  }
-
-  const edges = computeConnections({
-    terms: termMeta,
-    artworkTermSets,
-    minShared: 2,
-  }).filter((e) => e.source_term_id === termId);
-
-  await supabase.from("term_connections").delete().eq("source_term_id", termId);
-  for (let i = 0; i < edges.length; i += 100) {
-    const { error } = await supabase
-      .from("term_connections")
-      .upsert(edges.slice(i, i + 100));
-    if (error) throw error;
-  }
+  // Dump co-occurrence edges live in term_connections (object_tags). Do not
+  // replace them with a tiny cached-artwork graph on enrich.
 }
 
 export type EnrichResult = {

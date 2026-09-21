@@ -1,5 +1,8 @@
 /**
- * Compute term_connections + term_periods from Met index.
+ * Compute term_connections from object_tags dump co-occurrence.
+ * Also rebuilds term_periods for journey_ready subjects that have cached dated artworks.
+ *
+ * Usage: npm run ingest:connections
  */
 import { createClient } from "@supabase/supabase-js";
 import { writeFile, mkdir } from "node:fs/promises";
@@ -7,15 +10,16 @@ import path from "node:path";
 import { config } from "dotenv";
 import {
   computeConnections,
-  type ArtworkTermLink,
+  type ConnectionEdge,
   type TermMeta,
 } from "../../src/lib/index/connections";
 import { computeTermPeriods } from "../../src/lib/index/periods";
+import { CATALOG_JOURNEY_MIN } from "../../src/lib/index/validate";
 
 config({ path: ".env.local" });
 
 const DATA = path.resolve(process.cwd(), "data/met");
-const LAUNCH = ["flower", "landscape", "animal"] as const;
+const LAUNCH = ["flower", "landscape", "animal", "horse", "portrait"] as const;
 const PAGE = 1000;
 
 function requireEnv(name: string): string {
@@ -49,44 +53,28 @@ async function main() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  type ArtRow = {
-    id: string;
-    date_start: number | null;
-    artist_title: string | null;
-    is_public_domain: boolean;
-    image_id: string | null;
-    image_url: string | null;
-    image_url_small: string | null;
-  };
   type TermRow = {
     id: string;
     canonical: string;
     slug: string;
     aliases: string[] | null;
     status: TermMeta["status"];
+    catalog_work_count: number;
   };
 
-  const hasImage = (a: ArtRow) =>
-    !!(a.image_url_small || a.image_url || a.image_id);
-
-  const artworks = await fetchAll<ArtRow>(() =>
-    supabase
-      .from("artworks")
-      .select(
-        "id, date_start, artist_title, is_public_domain, image_id, image_url, image_url_small",
-      )
-      .eq("source", "met"),
-  );
-  const qualifying = new Set(
-    artworks
-      .filter((a) => a.is_public_domain && hasImage(a) && a.date_start != null)
-      .map((a) => a.id),
-  );
-  const artById = new Map(artworks.map((a) => [a.id, a]));
-
   const terms = await fetchAll<TermRow>(() =>
-    supabase.from("terms").select("id, canonical, slug, aliases, status"),
+    supabase
+      .from("terms")
+      .select("id, canonical, slug, aliases, status, catalog_work_count"),
   );
+
+  // Ensure dump-deep terms are journey_ready before scoring.
+  for (const t of terms) {
+    if (t.catalog_work_count >= CATALOG_JOURNEY_MIN && t.status !== "journey_ready") {
+      t.status = "journey_ready";
+    }
+  }
+
   const termMeta: TermMeta[] = terms.map((t) => ({
     id: t.id,
     canonical: t.canonical,
@@ -94,54 +82,138 @@ async function main() {
     aliases: t.aliases ?? [],
     status: t.status,
   }));
-
-  const links = await fetchAll<ArtworkTermLink>(() =>
-    supabase
-      .from("artwork_terms")
-      .select("artwork_id, term_id, evidence_source")
-      .in("evidence_source", ["term", "subject", "tag"]),
+  const termIdBySlug = new Map(terms.map((t) => [t.slug, t.id]));
+  const readySlugs = new Set(
+    terms
+      .filter((t) => t.status === "journey_ready")
+      .map((t) => t.slug),
   );
-  const qualifyingLinks = links.filter((l) => qualifying.has(l.artwork_id));
 
+  console.log(`terms=${terms.length} journey_ready=${readySlugs.size}`);
+
+  type TagRow = { source_id: string; slug: string };
+  const tags = await fetchAll<TagRow>(() =>
+    supabase.from("object_tags").select("source_id, slug"),
+  );
+  console.log(`object_tags=${tags.length}`);
+
+  /** source_id → set of term UUIDs (journey_ready slugs only). */
   const artworkTermSets = new Map<string, Set<string>>();
-  for (const l of qualifyingLinks) {
-    let set = artworkTermSets.get(l.artwork_id);
+
+  for (const row of tags) {
+    if (!readySlugs.has(row.slug)) continue;
+    const termId = termIdBySlug.get(row.slug);
+    if (!termId) continue;
+    let set = artworkTermSets.get(row.source_id);
     if (!set) {
       set = new Set();
-      artworkTermSets.set(l.artwork_id, set);
+      artworkTermSets.set(row.source_id, set);
     }
-    set.add(l.term_id);
+    set.add(termId);
   }
+
+  console.log(`tagged objects used=${artworkTermSets.size}`);
 
   const edges = computeConnections({
     terms: termMeta,
     artworkTermSets,
+    minShared: 3,
+    topK: 8,
   });
-  console.log(`connections=${edges.length}`);
+
+  // Remap sample_artwork_ids: computeConnections stored Met source_ids as "artwork" keys.
+  // Resolve to artworks.id when cached; otherwise clear samples.
+  const sampleSourceIds = [
+    ...new Set(edges.flatMap((e) => e.sample_artwork_ids)),
+  ];
+  const uuidBySource = new Map<string, string>();
+  for (let i = 0; i < sampleSourceIds.length; i += 100) {
+    const chunk = sampleSourceIds.slice(i, i + 100);
+    if (!chunk.length) continue;
+    const { data, error } = await supabase
+      .from("artworks")
+      .select("id, source_id")
+      .eq("source", "met")
+      .in("source_id", chunk);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      uuidBySource.set(row.source_id as string, row.id as string);
+    }
+  }
+
+  const edgesOut: ConnectionEdge[] = edges.map((e) => ({
+    ...e,
+    sample_artwork_ids: e.sample_artwork_ids
+      .map((sid) => uuidBySource.get(sid))
+      .filter((id): id is string => !!id)
+      .slice(0, 5),
+  }));
+
+  console.log(`connections=${edgesOut.length}`);
 
   await supabase.from("term_connections").delete().gte("shared_work_count", 0);
-  for (let i = 0; i < edges.length; i += 100) {
+  for (let i = 0; i < edgesOut.length; i += 100) {
     const { error } = await supabase
       .from("term_connections")
-      .upsert(edges.slice(i, i + 100));
+      .upsert(edgesOut.slice(i, i + 100));
     if (error) throw error;
   }
 
-  await supabase.from("term_periods").delete().gte("period_index", -9999);
+  // Periods only for subjects that already have cached dated artworks.
+  type ArtRow = {
+    id: string;
+    source_id: string;
+    date_start: number | null;
+    artist_title: string | null;
+    is_public_domain: boolean;
+    image_id: string | null;
+    image_url: string | null;
+    image_url_small: string | null;
+  };
+  const artworks = await fetchAll<ArtRow>(() =>
+    supabase
+      .from("artworks")
+      .select(
+        "id, source_id, date_start, artist_title, is_public_domain, image_id, image_url, image_url_small",
+      )
+      .eq("source", "met"),
+  );
+  const hasImage = (a: ArtRow) =>
+    !!(a.image_url_small || a.image_url || a.image_id);
+  const artById = new Map(artworks.map((a) => [a.id, a]));
+
+  const links = await fetchAll<{ artwork_id: string; term_id: string }>(() =>
+    supabase
+      .from("artwork_terms")
+      .select("artwork_id, term_id")
+      .in("evidence_source", ["term", "subject", "tag"]),
+  );
+
   let periodRows = 0;
-  for (const t of termMeta.filter((x) => x.status === "journey_ready")) {
-    const artIds = qualifyingLinks
+  const readyTerms = termMeta.filter((t) => t.status === "journey_ready");
+  // Only recompute periods for terms that have at least one link (avoid wiping all).
+  const termIdsWithLinks = new Set(links.map((l) => l.term_id));
+  for (const t of readyTerms) {
+    if (!termIdsWithLinks.has(t.id)) continue;
+    const artIds = links
       .filter((l) => l.term_id === t.id)
       .map((l) => l.artwork_id);
     const dated = artIds
       .map((id) => artById.get(id))
-      .filter((a): a is ArtRow => !!a && a.date_start != null)
+      .filter(
+        (a): a is ArtRow =>
+          !!a &&
+          a.is_public_domain &&
+          hasImage(a) &&
+          a.date_start != null,
+      )
       .map((a) => ({
         id: a.id,
         date_start: a.date_start!,
         artist_title: a.artist_title,
       }));
     const periods = computeTermPeriods(t.id, dated);
+    await supabase.from("term_periods").delete().eq("term_id", t.id);
     if (!periods.length) continue;
     const payload = periods.map((p) => ({
       term_id: t.id,
@@ -171,7 +243,15 @@ async function main() {
 
   await writeFile(
     path.join(DATA, "connections-summary.json"),
-    JSON.stringify({ edges: edges.length, periods: periodRows }, null, 2),
+    JSON.stringify(
+      {
+        edges: edgesOut.length,
+        periods: periodRows,
+        journey_ready: readySlugs.size,
+      },
+      null,
+      2,
+    ),
   );
 }
 

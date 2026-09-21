@@ -5,6 +5,8 @@ export type TermAggregate = {
   canonical: string;
   display_label: string;
   artworks: NormalizedArtwork[];
+  /** Dump tag depth; when set, drives journey_ready (≥8) vs browse_only. */
+  catalog_work_count?: number | null;
 };
 
 export type TermValidation = {
@@ -25,7 +27,10 @@ export type TermValidation = {
 
 const BUCKET = 50;
 
-/** Hard thresholds from product brief (tune after dump analysis). */
+/** Dump-deep subjects are journey_ready; cached-work gates no longer decide status. */
+export const CATALOG_JOURNEY_MIN = 8;
+
+/** Legacy artwork thresholds (stats / ranking only when catalog count is absent). */
 export const THRESHOLDS = {
   journeyMinWorks: 5,
   browseMinWorks: 3,
@@ -35,6 +40,14 @@ export const THRESHOLDS = {
   maxArtistShare: 0.55,
 } as const;
 
+export function statusFromCatalogCount(
+  catalogWorkCount: number,
+): Exclude<TermStatus, "unavailable"> | "unavailable" {
+  if (catalogWorkCount >= CATALOG_JOURNEY_MIN) return "journey_ready";
+  if (catalogWorkCount > 0) return "browse_only";
+  return "unavailable";
+}
+
 export function validateTerm(agg: TermAggregate): TermValidation {
   const reasons: string[] = [];
   const lang = isLanguageRejected(agg.canonical);
@@ -43,12 +56,6 @@ export function validateTerm(agg: TermAggregate): TermValidation {
   }
 
   const qualifying = agg.artworks.filter(isDisplayableArtwork);
-  // Exact catalog evidence already required to enter the aggregate.
-
-  if (qualifying.length < THRESHOLDS.browseMinWorks) {
-    reasons.push(`fewer_than_${THRESHOLDS.browseMinWorks}_displayable_works`);
-    return base(agg, "unavailable", reasons, qualifying);
-  }
 
   const years = qualifying
     .map((a) => a.date_start!)
@@ -91,6 +98,23 @@ export function validateTerm(agg: TermAggregate): TermValidation {
     max_artist_share: maxShare,
   };
 
+  if (agg.catalog_work_count != null) {
+    const status = statusFromCatalogCount(agg.catalog_work_count);
+    if (status === "journey_ready") {
+      reasons.push("catalog_depth_journey_ready");
+    } else if (status === "browse_only") {
+      reasons.push(`catalog_depth_browse_${agg.catalog_work_count}`);
+    } else {
+      reasons.push("catalog_depth_zero");
+    }
+    return { ...base(agg, status, reasons, qualifying), ...stats };
+  }
+
+  // Legacy path when catalog_work_count is omitted (unit tests / old ingest).
+  if (qualifying.length < THRESHOLDS.browseMinWorks) {
+    reasons.push(`fewer_than_${THRESHOLDS.browseMinWorks}_displayable_works`);
+    return base(agg, "unavailable", reasons, qualifying);
+  }
   if (qualifying.length < THRESHOLDS.journeyMinWorks) {
     reasons.push(`browse_only_depth_${qualifying.length}`);
     return { ...base(agg, "browse_only", reasons, qualifying), ...stats };
@@ -109,8 +133,6 @@ export function validateTerm(agg: TermAggregate): TermValidation {
   }
   if (maxShare != null && maxShare > THRESHOLDS.maxArtistShare) {
     reasons.push("single_maker_over_40_percent");
-    // Ranking concern for journey subset; still allow journey_ready if depth ok
-    // but brief says creator diversity is hard — treat as browse_only.
     return { ...base(agg, "browse_only", reasons, qualifying), ...stats };
   }
 

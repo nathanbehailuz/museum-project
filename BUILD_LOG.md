@@ -36,7 +36,8 @@ Left out to keep the product small: accounts, database, private collections, mul
 
 - Decision (2026-09-19 Phase 1): use existing empty Supabase project in org `museum-project` rather than creating a second paid project ($0/mo).
 - Decision: Phase 1 sample = AIC **getting-started** ID universe + **live API enrich** (not full S3 dump yet). Getting-started alone lacks subjects/PD/images.
-- Decision (2026-09-21): Connections only link `journey_ready` ↔ `journey_ready` (browse_only spokes dropped). Homepage Collection map shows all dump-deep subjects (`catalog_work_count ≥ 8`) with sparse ready-only edges. Generic blocklist keeps medium/century/nationality; depicted people allowed. `journeyMinWorks` = 5.
+- Decision (2026-09-21): **journey_ready** = non-generic + `catalog_work_count ≥ 8`. Edges from Met dump `object_tags` co-occurrence (not only cached artworks). Homepage scatter + CSS monograms.
+- Decision (2026-09-21): Connections only link `journey_ready` ↔ `journey_ready` (browse_only spokes dropped). Generic blocklist keeps medium/century/nationality; depicted people allowed.
 - Decision: blocklist generics/techniques (`painting`, `oil on canvas`, fairs, centuries) so journey-ready favors concrete nouns (flower, landscape, animal, …).
 - Decision (2026-09-19): pivot product from Met three-work exhibition maker to AIC dump–indexed subject museum (Journey / All Works / Connections) with Supabase. Alternative considered: finish Met Phase 4–5 then expand; rejected because the assessment story and data model are a different product. Docs updated first; code still Met until ingest phase.
 - Decision: switch from Art Institute of Chicago to The Met Collection API because it requires no key and exposes direct JPEG URLs. Alternative considered: keep AIC; rejected after product direction chose Met. **Superseded by 2026-09-19 pivot back to AIC dump + Supabase.**
@@ -141,8 +142,8 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Soft refresh does not rebuild terms; use full `npm run ingest` (or clean TRUNCATE reload) to expand subjects.
 - **On-demand Met cache:** CSV tags live in `object_tags` (~237k rows, 1109 subjects). Opening a subject fetches up to 8 missing objects and caches them. Overnight 139k crawl stopped (~2673 artworks already cached). Production needs `SUPABASE_SERVICE_ROLE_KEY` on the server for first-visit enrich.
 - Subject UI is two pages only (chronological constellation + connections graph); All Works route redirects to journey.
-- Homepage Collection map shows ~891 dump-deep subjects; gold edges only link current journey_ready pairs (sparse until more subjects enrich past validation).
-- Connections ignore browse_only targets (e.g. George Washington no longer appears on Animal/Flower). Re-run `npm run ingest:connections` to purge old edges from DB.
+- Homepage Collection map: ~891 dump-deep subjects as CSS monograms in a filled scatter; edges from object_tags co-occurrence (4842 directed rows / ~2k undirected). Journey loads Met works on first open via enrich.
+- Connections ignore browse_only targets. Re-run `npm run ingest:connections` after tag reloads.
 ## Time spent
 
 | Phase | Time | Notes |
@@ -161,6 +162,17 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Total | ~15–17.5 h | On-demand cache, not full dump crawl |
 
 ## Session notes
+
+### 2026-09-21 (Catalog journey_ready + connected map)
+
+- **journey_ready** = `catalog_work_count ≥ 8` (891 terms flipped in SQL; enrich no longer downgrades on thin cache).
+- Rebuilt **4842** `term_connections` from `object_tags` co-occurrence (min 3 shared, top-K 8). Enrich no longer overwrites dump edges.
+- Homepage: filled hash scatter (no doughnut); CSS monogram icons only (no Met thumbs); meta shows subject/link counts.
+- Verified: Vitest 41/41; horse/portrait/flower each have 8 edges; ingest:connections summary written.
+
+### 2026-09-21 (Catalog graph hydration fix)
+
+- React Flow on the homepage SSR’d transform styles that disagreed with the client (`2049.26px` vs full float). Mounted React Flow only after `useEffect`; rounded layout positions. Header/meta still SSR.
 
 ### 2026-09-21 (Homepage catalog graph + journey_ready-only edges)
 

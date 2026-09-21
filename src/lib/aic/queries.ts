@@ -164,7 +164,7 @@ export async function getArtworkBySourceId(sourceId: string) {
 /**
  * Dump-deep subjects for the homepage catalog graph (no Met API).
  * Nodes: catalog_work_count >= 8, non-generic.
- * Edges: journey_ready ↔ journey_ready only.
+ * Edges: journey_ready ↔ journey_ready only (from object_tags co-occurrence).
  */
 export async function getCatalogGraph(): Promise<{
   nodes: CatalogGraphNode[];
@@ -196,71 +196,49 @@ export async function getCatalogGraph(): Promise<{
 
   const filtered = termRows.filter((t) => !isGenericCanonical(t.canonical));
   const byId = new Map(filtered.map((t) => [t.id, t]));
-  const readyIds = filtered
-    .filter((t) => t.status === "journey_ready")
-    .map((t) => t.id);
-
-  const thumbByTermId = new Map<string, string>();
-  if (readyIds.length) {
-    const { data: periods, error: pErr } = await supabase
-      .from("term_periods")
-      .select("term_id, featured_artwork_ids")
-      .in("term_id", readyIds)
-      .order("period_index", { ascending: true });
-    if (pErr) throw pErr;
-
-    const firstArtIdByTerm = new Map<string, string>();
-    for (const p of periods ?? []) {
-      const tid = p.term_id as string;
-      if (firstArtIdByTerm.has(tid)) continue;
-      const ids = (p.featured_artwork_ids as string[]) ?? [];
-      if (ids[0]) firstArtIdByTerm.set(tid, ids[0]);
-    }
-    const artIds = [...new Set(firstArtIdByTerm.values())];
-    const arts = await getArtworksByIds(artIds);
-    const artById = new Map(arts.map((a) => [a.id, a]));
-    for (const [tid, aid] of firstArtIdByTerm) {
-      const a = artById.get(aid);
-      const url = a?.image_url_small || a?.image_url || a?.image_id || null;
-      if (url) thumbByTermId.set(tid, url);
-    }
-  }
-
-  const nodes: CatalogGraphNode[] = filtered.map((t) => ({
-    slug: t.slug,
-    label: t.display_label,
-    status: t.status,
-    imageUrl: thumbByTermId.get(t.id) ?? null,
-  }));
+  const readyIds = new Set(
+    filtered.filter((t) => t.status === "journey_ready").map((t) => t.id),
+  );
 
   const edges: CatalogGraphEdge[] = [];
   const seenPair = new Set<string>();
-  if (readyIds.length) {
+  const linkedSlugs = new Set<string>();
+
+  for (let from = 0; ; from += PAGE) {
     const { data: connRows, error: cErr } = await supabase
       .from("term_connections")
       .select("source_term_id, target_term_id, shared_work_count")
-      .in("source_term_id", readyIds);
+      .order("source_term_id", { ascending: true })
+      .range(from, from + PAGE - 1);
     if (cErr) throw cErr;
-
-    for (const row of connRows ?? []) {
+    const batch = connRows ?? [];
+    for (const row of batch) {
       const src = byId.get(row.source_term_id as string);
       const tgt = byId.get(row.target_term_id as string);
       if (!src || !tgt) continue;
-      if (src.status !== "journey_ready" || tgt.status !== "journey_ready") {
-        continue;
-      }
+      if (!readyIds.has(src.id) || !readyIds.has(tgt.id)) continue;
       const a = src.slug < tgt.slug ? src.slug : tgt.slug;
       const b = src.slug < tgt.slug ? tgt.slug : src.slug;
       const key = `${a}|${b}`;
       if (seenPair.has(key)) continue;
       seenPair.add(key);
+      linkedSlugs.add(src.slug);
+      linkedSlugs.add(tgt.slug);
       edges.push({
         source: src.slug,
         target: tgt.slug,
         sharedWorkCount: row.shared_work_count as number,
       });
     }
+    if (batch.length < PAGE) break;
   }
+
+  const nodes: CatalogGraphNode[] = filtered.map((t) => ({
+    slug: t.slug,
+    label: t.display_label,
+    status: t.status,
+    linked: linkedSlugs.has(t.slug),
+  }));
 
   return { nodes, edges };
 }

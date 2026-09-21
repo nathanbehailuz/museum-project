@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ReactFlow,
@@ -26,14 +26,12 @@ type Props = {
 type CatalogNodeData = {
   slug: string;
   label: string;
-  imageUrl: string | null;
-  ready: boolean;
+  linked: boolean;
 };
 
-const WIDTH = 3200;
-const HEIGHT = 2200;
-const CX = WIDTH / 2;
-const CY = HEIGHT / 2;
+const WIDTH = 3600;
+const HEIGHT = 2400;
+const PAD = 80;
 
 function hashUnit(id: string): number {
   let h = 0;
@@ -41,22 +39,13 @@ function hashUnit(id: string): number {
   return (Math.abs(h) % 10000) / 10000;
 }
 
-function layoutPosition(
-  slug: string,
-  ready: boolean,
-  index: number,
-  total: number,
-): { x: number; y: number } {
+/** Filled scatter — no doughnut / hollow center. */
+function layoutPosition(slug: string): { x: number; y: number } {
   const u = hashUnit(slug);
   const v = hashUnit(`${slug}:y`);
-  const angle = (index / Math.max(total, 1)) * Math.PI * 2 + u * 0.4;
-  const ring = ready ? 0.22 + u * 0.18 : 0.42 + v * 0.48;
-  const radius = Math.min(WIDTH, HEIGHT) * 0.42 * ring;
-  const jitterX = (u - 0.5) * (ready ? 40 : 90);
-  const jitterY = (v - 0.5) * (ready ? 40 : 90);
   return {
-    x: CX + Math.cos(angle) * radius + jitterX - (ready ? 22 : 14),
-    y: CY + Math.sin(angle) * radius + jitterY - (ready ? 28 : 18),
+    x: Math.round(PAD + u * (WIDTH - 2 * PAD) - 14),
+    y: Math.round(PAD + v * (HEIGHT - 2 * PAD) - 18),
   };
 }
 
@@ -64,20 +53,13 @@ function CatalogNode({ data }: NodeProps<Node<CatalogNodeData>>) {
   const letter = (data.label[0] ?? "?").toUpperCase();
   return (
     <div
-      className={data.ready ? styles.nodeReady : styles.nodeDim}
+      className={data.linked ? styles.nodeLinked : styles.nodeDim}
       title={data.label}
     >
       <Handle type="target" id="t" position={Position.Top} className={styles.handle} />
       <Handle type="source" id="s" position={Position.Bottom} className={styles.handle} />
-      <div className={styles.icon}>
-        {data.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={data.imageUrl} alt="" />
-        ) : (
-          <span className={styles.glyph} aria-hidden="true">
-            {letter}
-          </span>
-        )}
+      <div className={styles.icon} aria-hidden="true">
+        <span className={styles.glyph}>{letter}</span>
       </div>
       <span className={styles.label}>{data.label}</span>
     </div>
@@ -86,35 +68,28 @@ function CatalogNode({ data }: NodeProps<Node<CatalogNodeData>>) {
 
 const nodeTypes = { catalog: CatalogNode };
 
-export default function HomeCatalogGraph({ nodes: catalogNodes, edges: catalogEdges }: Props) {
+export default function HomeCatalogGraph({
+  nodes: catalogNodes,
+  edges: catalogEdges,
+}: Props) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { nodes, edges } = useMemo(() => {
-    const sorted = [...catalogNodes].sort((a, b) =>
-      a.slug.localeCompare(b.slug),
-    );
-    const readyFirst = [
-      ...sorted.filter((n) => n.status === "journey_ready"),
-      ...sorted.filter((n) => n.status !== "journey_ready"),
-    ];
-    const total = readyFirst.length;
-
-    const rfNodes: Node<CatalogNodeData>[] = readyFirst.map((n, i) => {
-      const ready = n.status === "journey_ready";
-      const pos = layoutPosition(n.slug, ready, i, total);
-      return {
-        id: n.slug,
-        type: "catalog",
-        position: pos,
-        data: {
-          slug: n.slug,
-          label: n.label,
-          imageUrl: n.imageUrl,
-          ready,
-        },
-        draggable: false,
-      };
-    });
+    const rfNodes: Node<CatalogNodeData>[] = catalogNodes.map((n) => ({
+      id: n.slug,
+      type: "catalog",
+      position: layoutPosition(n.slug),
+      data: {
+        slug: n.slug,
+        label: n.label,
+        linked: n.linked,
+      },
+      draggable: false,
+    }));
 
     const maxShared = Math.max(
       1,
@@ -131,8 +106,8 @@ export default function HomeCatalogGraph({ nodes: catalogNodes, edges: catalogEd
         type: "straight",
         animated: false,
         style: {
-          stroke: "rgba(212, 175, 55, 0.55)",
-          strokeWidth: 1 + strength * 2.5,
+          stroke: "rgba(212, 175, 55, 0.4)",
+          strokeWidth: 0.75 + strength * 2,
         },
       };
     });
@@ -149,6 +124,8 @@ export default function HomeCatalogGraph({ nodes: catalogNodes, edges: catalogEd
 
   if (!catalogNodes.length) return null;
 
+  const linkedCount = catalogNodes.filter((n) => n.linked).length;
+
   return (
     <section className={styles.wrap} aria-labelledby="catalog-graph-heading">
       <div className={styles.header}>
@@ -156,8 +133,10 @@ export default function HomeCatalogGraph({ nodes: catalogNodes, edges: catalogEd
           Collection map
         </h2>
         <p className={styles.meta}>
-          {catalogNodes.length.toLocaleString()} subjects from The Met catalog.
-          Gold links connect journey-ready subjects that share tagged works.
+          {catalogNodes.length.toLocaleString()} subjects ·{" "}
+          {catalogEdges.length.toLocaleString()} links · {linkedCount.toLocaleString()}{" "}
+          connected. Click any subject to open its journey (works load on
+          demand).
         </p>
       </div>
       <div
@@ -165,27 +144,31 @@ export default function HomeCatalogGraph({ nodes: catalogNodes, edges: catalogEd
         role="img"
         aria-label="Catalog subject graph"
       >
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodeClick={onNodeClick}
-          fitView
-          fitViewOptions={{ padding: 0.12 }}
-          minZoom={0.08}
-          maxZoom={2.5}
-          onlyRenderVisibleElements
-          nodesConnectable={false}
-          nodesDraggable={false}
-          edgesFocusable={false}
-          panOnDrag
-          zoomOnScroll
-          colorMode="dark"
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background color="rgba(242, 202, 80, 0.08)" gap={48} />
-          <Controls showInteractive={false} />
-        </ReactFlow>
+        {mounted ? (
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodeClick={onNodeClick}
+            fitView
+            fitViewOptions={{ padding: 0.08 }}
+            minZoom={0.06}
+            maxZoom={2.5}
+            onlyRenderVisibleElements
+            nodesConnectable={false}
+            nodesDraggable={false}
+            edgesFocusable={false}
+            panOnDrag
+            zoomOnScroll
+            colorMode="dark"
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background color="rgba(242, 202, 80, 0.08)" gap={48} />
+            <Controls showInteractive={false} />
+          </ReactFlow>
+        ) : (
+          <p className={styles.loading}>Loading map…</p>
+        )}
       </div>
     </section>
   );
