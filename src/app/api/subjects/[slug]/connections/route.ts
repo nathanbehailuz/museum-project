@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   getArtworksByIds,
   getTermBySlug,
+  isExplorableTerm,
   mapArtwork,
   mapTerm,
 } from "@/lib/aic/queries";
@@ -36,16 +37,19 @@ export async function GET(request: Request, { params }: Params) {
       )
       .eq("source_term_id", term.id)
       .order("connection_score", { ascending: false })
-      .limit(8);
+      .limit(32);
     if (error) throw error;
 
     const targetIds = (edges ?? []).map((e) => e.target_term_id as string);
     const { data: targets } = targetIds.length
       ? await supabase
           .from("terms")
-          .select("id, slug, display_label, canonical, status")
+          .select(
+            "id, slug, display_label, canonical, status, qualifying_work_count",
+          )
           .in("id", targetIds)
           .eq("status", "journey_ready")
+          .gt("qualifying_work_count", 0)
       : {
           data: [] as {
             id: string;
@@ -53,6 +57,7 @@ export async function GET(request: Request, { params }: Params) {
             display_label: string;
             canonical: string;
             status: string;
+            qualifying_work_count: number;
           }[],
         };
 
@@ -81,12 +86,13 @@ export async function GET(request: Request, { params }: Params) {
             .map((row) => mapArtwork(row!)),
         };
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, 8);
 
     let intersection: ReturnType<typeof mapArtwork>[] = [];
     if (relatedSlug) {
       const related = await getTermBySlug(relatedSlug);
-      if (related) {
+      if (related && isExplorableTerm(related)) {
         const edge = (edges ?? []).find(
           (e) => e.target_term_id === related.id,
         );

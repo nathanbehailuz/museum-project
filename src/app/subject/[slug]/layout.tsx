@@ -4,6 +4,7 @@ import SubjectShell from "@/app/components/SubjectShell";
 import styles from "@/app/components/museum.module.css";
 import {
   getTermBySlug,
+  isExplorableTerm,
   mapTerm,
   suggestJourneyReady,
 } from "@/lib/aic/queries";
@@ -51,10 +52,7 @@ export default async function SubjectLayout({ children, params }: Props) {
   }
 
   // Keep uncached / browse_only terms in the DB; do not open an empty journey for them.
-  if (
-    term.status !== "journey_ready" ||
-    (term.qualifying_work_count ?? 0) <= 0
-  ) {
+  if (!isExplorableTerm(term)) {
     const suggestions = (await suggestJourneyReady(6)).map(mapTerm);
     const subject = mapTerm(term);
     return (

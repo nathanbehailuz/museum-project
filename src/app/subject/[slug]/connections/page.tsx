@@ -3,6 +3,7 @@ import styles from "@/app/components/museum.module.css";
 import {
   getArtworksByIds,
   getTermBySlug,
+  isExplorableTerm,
   mapArtwork,
 } from "@/lib/aic/queries";
 import { enrichSubjectOnce } from "@/lib/index/enrichOnce";
@@ -42,16 +43,19 @@ export default async function ConnectionsPage({
       )
       .eq("source_term_id", term.id)
       .order("connection_score", { ascending: false })
-      .limit(8);
+      .limit(32);
     if (error) throw error;
 
     const targetIds = (edges ?? []).map((e) => e.target_term_id as string);
     const { data: targets } = targetIds.length
       ? await supabase
           .from("terms")
-          .select("id, slug, display_label, canonical, status")
+          .select(
+            "id, slug, display_label, canonical, status, qualifying_work_count",
+          )
           .in("id", targetIds)
           .eq("status", "journey_ready")
+          .gt("qualifying_work_count", 0)
       : {
           data: [] as {
             id: string;
@@ -59,6 +63,7 @@ export default async function ConnectionsPage({
             display_label: string;
             canonical: string;
             status: string;
+            qualifying_work_count: number;
           }[],
         };
 
@@ -89,28 +94,30 @@ export default async function ConnectionsPage({
     const hubRows = await getArtworksByIds(hubIds);
     const hubSample = hubRows[0] ? mapArtwork(hubRows[0]) : null;
 
-    const connections = (edges ?? []).flatMap((e) => {
-      const t = targetById.get(e.target_term_id as string);
-      if (!t) return [];
-      const ids = (e.sample_artwork_ids as string[]) ?? [];
-      return [
-        {
-          targetSlug: t.slug,
-          targetLabel: t.display_label ?? t.canonical ?? "",
-          sharedWorkCount: e.shared_work_count as number,
-          connectionScore: Number(e.connection_score),
-          samples: ids
-            .map((id) => sampleById.get(id))
-            .filter(Boolean)
-            .map((row) => mapArtwork(row!)),
-        },
-      ];
-    });
+    const connections = (edges ?? [])
+      .flatMap((e) => {
+        const t = targetById.get(e.target_term_id as string);
+        if (!t) return [];
+        const ids = (e.sample_artwork_ids as string[]) ?? [];
+        return [
+          {
+            targetSlug: t.slug,
+            targetLabel: t.display_label ?? t.canonical ?? "",
+            sharedWorkCount: e.shared_work_count as number,
+            connectionScore: Number(e.connection_score),
+            samples: ids
+              .map((id) => sampleById.get(id))
+              .filter(Boolean)
+              .map((row) => mapArtwork(row!)),
+          },
+        ];
+      })
+      .slice(0, 8);
 
     let intersection = [] as ReturnType<typeof mapArtwork>[];
     if (state.related) {
       const related = await getTermBySlug(state.related);
-      if (related) {
+      if (related && isExplorableTerm(related)) {
         const edge = (edges ?? []).find(
           (e) => e.target_term_id === related.id,
         );

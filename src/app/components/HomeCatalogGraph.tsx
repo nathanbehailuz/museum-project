@@ -232,7 +232,7 @@ export default function HomeCatalogGraph({
             </>
           ) : (
             <>
-              {catalogNodes.length.toLocaleString()} subjects ·{" "}
+              {catalogNodes.length.toLocaleString()} cached subjects ·{" "}
               {linkedCount.toLocaleString()} connected. Hover a subject to see
               its links; click to open its journey.
             </>

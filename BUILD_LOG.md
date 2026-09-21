@@ -27,7 +27,7 @@ Chose **The Met Open Access** (CSV tag index + Collection API) over a three-work
 - **Supabase index + BFF** as the advanced feature (not client-only Met calls) so secrets, validation, and enrich stay server-side. Alternative: browser → Met directly — rejected.
 - **Dump tags (`object_tags`) + on-demand enrich** instead of finishing the full CSV crawl. Search/depth from dump; journey images from cached objects (small fetch cap per visit). Alternative: 30h+ Incapsula-prone crawl — parked.
 - **`journey_ready` = catalog depth ≥ 8** (non-generic). **UI entry** (search, collection map, subject shell) additionally requires **cached** works (`qualifying_work_count > 0`) so empty journeys never open. Uncached dump subjects stay in the DB for later enrich.
-- **Connections = journey_ready ↔ journey_ready** co-occurrence only — avoids noisy browse_only spokes.
+- **Connections spokes** = journey_ready + `qualifying_work_count > 0` only (same cache gate as the homepage map). Dump-deep uncached subjects stay in DB but never appear as spokes or related targets.
 - **Journey plots all cached dated+imaged works** (chronological, horizontal scroll), not a 4-per-period featured sample. Full dump IDs wait on later bulk cache.
 - **Shareable URL state** (`?chapter=`, `?artwork=`) as product truth — no accounts.
 - **Shimmer skeletons** over raw “Loading…” for submission polish.
@@ -52,7 +52,7 @@ Chose **The Met Open Access** (CSV tag index + Collection API) over a three-work
 
 ## Known limitations
 
-- Homepage Collection map and search only list **journey_ready** subjects with **cached** works (`qualifying_work_count > 0`). Dump tags / uncached terms stay in Supabase for later enrich; they are not clickable empty journeys.
+- Homepage Collection map and Connections only list subjects with **cached** works (`qualifying_work_count > 0`). Dump-deep but uncached terms (e.g. Politic) stay in Supabase for later enrich and are not plotted or linked as spokes.
 - Journey shows **cached** works only; `catalog_work_count` can be much larger until enrich/bulk jobs finish.
 - Enrich needs `SUPABASE_SERVICE_ROLE_KEY` on Vercel; without it, first visits stay DB-only.
 - Bulk Met fetches still hit **403/timeouts**; not production-critical for the demo path.
@@ -70,3 +70,12 @@ Chose **The Met Open Access** (CSV tag index + Collection API) over a three-work
 | Subject UI (journey, connections, home map) | 4–5 |
 | On-demand enrich + polish (skeletons, scroll, docs) | 2–3 |
 | **Total** | **~17–20** |
+
+## Session notes
+
+### 2026-09-21 — Cached-only graph & connections
+
+- Homepage `getCatalogGraph`, search/suggest, subject layout, and Connections page/API all require `journey_ready` **and** `qualifying_work_count > 0`.
+- Related-intersection on Connections only resolves when the related slug is explorable (`isExplorableTerm`).
+- Home featured strip uses the same helper. Meta copy: “cached subjects.”
+- Verified: `tsc`, Vitest 41, lint on touched files. Uncached subjects (e.g. Politic) remain in Supabase for later enrich.

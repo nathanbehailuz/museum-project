@@ -9,6 +9,7 @@ import {
   getArtworksByIds,
   getCatalogGraph,
   getTermBySlug,
+  isExplorableTerm,
   mapArtwork,
   mapTerm,
   suggestJourneyReady,
@@ -130,7 +131,7 @@ async function HomeBody() {
 
   try {
     featuredTerm = await getTermBySlug(FEATURED_SLUG);
-    if (featuredTerm?.status === "journey_ready") {
+    if (featuredTerm && isExplorableTerm(featuredTerm)) {
       featuredWorks = await loadFeaturedWorks(featuredTerm.id, 6);
     }
     subjects = (await suggestJourneyReady(6)).map(mapTerm);

@@ -52,6 +52,14 @@ export function mapTerm(row: TermRow): SubjectSummary {
   };
 }
 
+/** Subjects the UI may open: journey_ready with at least one cached plottable work. */
+export function isExplorableTerm(row: {
+  status: SubjectSummary["status"];
+  qualifying_work_count?: number | null;
+}): boolean {
+  return row.status === "journey_ready" && (row.qualifying_work_count ?? 0) > 0;
+}
+
 export function mapArtwork(
   row: ArtworkRow,
   evidenceSource?: string | null,
@@ -240,7 +248,8 @@ export async function getCatalogGraph(): Promise<{
     label: t.display_label,
     status: t.status,
     linked: linkedSlugs.has(t.slug),
-    catalogWorkCount: t.catalog_work_count,
+    // Size the map by cached depth, not dump catalog depth.
+    catalogWorkCount: t.qualifying_work_count,
   }));
 
   return { nodes, edges };
