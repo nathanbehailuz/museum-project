@@ -7,9 +7,9 @@ Working log at the repo root. Update after every meaningful change, not only at 
 
 ## Goal & scope decision
 
-**Current product (docs pivoted 2026-09-19):** a searchable digital museum. Visitor types a validated subject, follows a chronological Journey, browses All Works, explores Connections (catalog co-occurrence), inspects artworks, and shares URL state. Pitch: *Type a thing. See how artists have pictured it across time.*
+**Current product (docs pivoted 2026-09-19; Met-first runtime):** a searchable digital museum. Visitor types a validated subject, follows a chronological Journey, browses Connections (catalog co-occurrence), inspects artworks, and shares URL state. Pitch: *Type a thing. See how artists have pictured it across time.*
 
-Primary source: Art Institute of Chicago official dump → normalize/validate → Supabase index; app reads the index via Next.js BFF; IIIF image URLs (no image binaries in Storage). Advanced features: ingest + validation + BFF; signature motion; shareable URL + server-backed autocomplete.
+Primary source: **The Met** Open Access CSV tag index + Collection API enrich → Supabase; app reads the index via Next.js BFF; Met JPEG URLs (no image binaries in Storage). Advanced features: ingest + validation + BFF; signature motion; shareable URL + server-backed autocomplete.
 
 Must ship: reproducible sample ingest, validation pipeline, ≥3 journey-ready subjects from data, Journey / All Works / Connections, shared inspection, shareable URLs, one signature transition, loading/empty/error states.
 
@@ -38,7 +38,9 @@ Left out to keep the product small: accounts, database, private collections, mul
 - Decision: Phase 1 sample = AIC **getting-started** ID universe + **live API enrich** (not full S3 dump yet). Getting-started alone lacks subjects/PD/images.
 - Decision (2026-09-21): **journey_ready** = non-generic + `catalog_work_count ≥ 8`. Edges from Met dump `object_tags` co-occurrence (not only cached artworks). Homepage scatter + CSS monograms.
 - Decision (2026-09-21): Connections only link `journey_ready` ↔ `journey_ready` (browse_only spokes dropped). Generic blocklist keeps medium/century/nationality; depicted people allowed.
-- Decision: blocklist generics/techniques (`painting`, `oil on canvas`, fairs, centuries) so journey-ready favors concrete nouns (flower, landscape, animal, …).
+- Decision (2026-09-21): Journey renders every deduplicated **cached** displayable work for the subject (chronological), not only period featured IDs. Full dump catalog remains a later bulk-cache job.
+- Decision (2026-09-21): Submission polish replaces raw “Loading…” copy with shimmer skeletons reused from existing `--skeleton` tokens; search and journey paging expose empty/error/retry.
+ - Decision: blocklist generics/techniques (`painting`, `oil on canvas`, fairs, centuries) so journey-ready favors concrete nouns (flower, landscape, animal, …).
 - Decision (2026-09-19): pivot product from Met three-work exhibition maker to AIC dump–indexed subject museum (Journey / All Works / Connections) with Supabase. Alternative considered: finish Met Phase 4–5 then expand; rejected because the assessment story and data model are a different product. Docs updated first; code still Met until ingest phase.
 - Decision: switch from Art Institute of Chicago to The Met Collection API because it requires no key and exposes direct JPEG URLs. Alternative considered: keep AIC; rejected after product direction chose Met. **Superseded by 2026-09-19 pivot back to AIC dump + Supabase.**
 - Decision: reviewed artwork ID pools plus live metadata, because keyword/tag search often matches catalog text without showing the subject, and Met `hasImages=true` does not guarantee open-access images. Alternative considered: live search-only; rejected for visual relevance. **Historical for Met maker; new product uses dump validation + status bands instead.**
@@ -144,6 +146,7 @@ Live URL: https://museum-exhibition-iota.vercel.app
 - Subject UI is two pages only (chronological constellation + connections graph); All Works route redirects to journey.
 - Homepage Collection map: ~891 dump-deep subjects as CSS monograms in a filled scatter; edges from object_tags co-occurrence (4842 directed rows / ~2k undirected). Journey loads Met works on first open via enrich.
 - Connections ignore browse_only targets. Re-run `npm run ingest:connections` after tag reloads.
+- Journey “all” means all **cached** qualifying works linked to the subject (dated + image), not the full `catalog_work_count` dump set until those IDs are enriched.
 ## Time spent
 
 | Phase | Time | Notes |
@@ -159,9 +162,38 @@ Live URL: https://museum-exhibition-iota.vercel.app
 | Full catalog ingest resume | ~0.5 h | Started then stopped; replaced by on-demand |
 | On-demand tag index + enrich | ~1 h | object_tags, lazy Met fetch, chair journey_ready |
 | Homepage catalog graph + tighter edges | ~1 h | 891-node map; journey_ready-only links; generics |
-| Total | ~15–17.5 h | On-demand cache, not full dump crawl |
+| Journey horizontal scroll | <0.5 h | All featured nodes; expanding canvas; scroll/focus polish |
+| Submission polish (skeletons + docs) | <1 h | Loading UX, search/journey retry, README |
+| Total | ~16–18.5 h | On-demand cache, not full dump crawl |
 
 ## Session notes
+
+### 2026-09-21 (Submission polish: skeletons, states, README)
+
+- Replaced raw “Loading…” Suspense/map/inspection copy with shimmer skeletons (`MuseumSkeletons` + `skeletons.module.css`) using existing `--skeleton` tokens.
+- Search: empty “no match”, error + retry, list shimmer while fetching.
+- Journey: “Loading more works…” chip + retry when multi-page cached feed fails; zoom buttons get `aria-label`; constellation `:focus-visible`; softer mobile field height.
+- README: features, architecture, API rationale, advanced BFF feature, testing commands.
+- Verified: TypeScript clean; Vitest 41/41; ESLint clean on touched museum UI files.
+
+### 2026-09-21 (Journey: all featured works + horizontal scroll)
+
+- Removed the Journey UI caps of 16 total / 3 per period; `pickWorks` now keeps every unique featured work in chronological order while preserving epoch filtering.
+- Replaced viewport recompression with an expanding constellation canvas and a fixed 174px minimum center gap. The field now scrolls horizontally with touch/trackpad support and a discreet scrollbar.
+- Focused `?artwork=` nodes scroll into view horizontally; existing zoom, SVG paths, and artwork inspection remain wired to the expanded canvas.
+- Fixed the blocking homepage 500: Next 15 rejects `next/dynamic({ ssr: false })` in the server `page.tsx`, so the existing client component is imported directly; its `mounted` guard still delays React Flow until the browser.
+- Verified: ESLint clean; TypeScript clean; Vitest 41/41; production build passes. Local `/` and `/subject/flower/journey` return 200. Browser smoke rendered 23 Flower nodes in a 5,764px horizontal scroll area (711px viewport).
+
+### 2026-09-21 (`frame.join` overlay + client-only map)
+
+- Dev redbox `Runtime TypeError: frame.join is not a function` comes from React Flight’s `buildFakeCallStack` (Next error overlay), not app code — it often masks a hydration/HMR failure.
+- Initial workaround loaded `HomeCatalogGraph` via `next/dynamic({ ssr: false })`; this was later removed because Next 15 rejects that option in Server Components. The graph’s internal `mounted` guard is the supported client-only render boundary.
+
+### 2026-09-21 (Collection map: focus constellation)
+
+- Default: no edges (avoids hairball). Hover focuses a subject → only its spokes draw; others dim to ~12%.
+- Node size scales with `log(catalog_work_count)`. Labels only for focus/neighbors (and top-depth hubs at rest).
+- Meta line updates with focused subject + neighbor count.
 
 ### 2026-09-21 (Catalog journey_ready + connected map)
 

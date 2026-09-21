@@ -23,33 +23,40 @@ export default function SubjectSearch({
   const [results, setResults] = useState<SubjectSummary[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [retryToken, setRetryToken] = useState(0);
   const listId = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
+  const inputId = compact ? "subject-search-compact" : "subject-search";
 
   useEffect(() => {
     const handle = setTimeout(() => {
       setLoading(true);
+      setError(null);
       fetch(`/api/subjects?q=${encodeURIComponent(q)}`)
-        .then((r) => r.json())
-        .then((json) => {
+        .then(async (r) => {
+          const json = await r.json();
+          if (!r.ok) {
+            throw new Error(json.message ?? "Search failed");
+          }
           setResults(json.results ?? []);
           setActiveIndex(-1);
-          // Only open the list after the user is interacting with search.
-          if (
-            document.activeElement ===
-            document.getElementById(
-              compact ? "subject-search-compact" : "subject-search",
-            )
-          ) {
+          if (document.activeElement === document.getElementById(inputId)) {
             setOpen(true);
           }
         })
-        .catch(() => setResults([]))
+        .catch((err: Error) => {
+          setResults([]);
+          setError(err.message || "Search failed");
+          if (document.activeElement === document.getElementById(inputId)) {
+            setOpen(true);
+          }
+        })
         .finally(() => setLoading(false));
     }, 220);
     return () => clearTimeout(handle);
-  }, [q, compact]);
+  }, [q, compact, inputId, retryToken]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -67,6 +74,9 @@ export default function SubjectSearch({
     [router],
   );
 
+  const showPanel =
+    open && (loading || error != null || q.trim().length > 0 || results.length > 0);
+
   return (
     <div
       className={compact ? styles.searchWrapCompact : styles.searchWrap}
@@ -74,7 +84,7 @@ export default function SubjectSearch({
     >
       <label
         className={compact ? styles.searchLabelCompact : styles.searchLabel}
-        htmlFor={compact ? "subject-search-compact" : "subject-search"}
+        htmlFor={inputId}
       >
         Search the collection
       </label>
@@ -91,25 +101,24 @@ export default function SubjectSearch({
         </svg>
       )}
       <input
-        id={compact ? "subject-search-compact" : "subject-search"}
+        id={inputId}
         className={compact ? styles.searchInputCompact : styles.searchInput}
         type="search"
         role="combobox"
-        aria-expanded={open}
+        aria-expanded={showPanel}
         aria-controls={listId}
         aria-autocomplete="list"
+        aria-busy={loading}
         aria-activedescendant={
           activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined
         }
         placeholder={
-          compact
-            ? "Search motifs…"
-            : "Try flower, landscape, animal…"
+          compact ? "Search motifs…" : "Try flower, landscape, animal…"
         }
         value={q}
         autoFocus={autofocus}
         onFocus={() => {
-          if (results.length > 0) setOpen(true);
+          if (results.length > 0 || error || q.trim()) setOpen(true);
         }}
         onChange={(e) => {
           setQ(e.target.value);
@@ -138,33 +147,58 @@ export default function SubjectSearch({
           Searching
         </span>
       )}
-      {open && results.length > 0 && (
+      {showPanel && (
         <ul id={listId} className={styles.suggestList} role="listbox">
-          {results.map((s, i) => (
-            <li
-              key={s.slug}
-              id={`${listId}-${i}`}
-              role="option"
-              aria-selected={activeIndex === i}
-            >
+          {loading && (
+            <li className={styles.suggestStatus} role="presentation">
+              <span className={styles.suggestStatusShimmer} aria-hidden="true" />
+              <span className={styles.srOnly}>Searching subjects</span>
+            </li>
+          )}
+          {!loading && error && (
+            <li className={styles.suggestStatus} role="presentation">
+              <p className={styles.suggestStatusError}>{error}</p>
               <button
                 type="button"
-                className={styles.suggestItem}
-                onClick={() => go(s)}
-                onMouseEnter={() => setActiveIndex(i)}
+                className={styles.suggestRetry}
+                onClick={() => setRetryToken((n) => n + 1)}
               >
-                <span className={styles.suggestTitle}>{s.displayLabel}</span>
-                <span className={styles.suggestMeta}>
-                  {formatSubjectMeta(
-                    s.qualifyingWorkCount || s.catalogWorkCount,
-                    s.dateMin,
-                    s.dateMax,
-                  )}
-                  {s.status === "browse_only" ? " · browse only" : ""}
-                </span>
+                Retry search
               </button>
             </li>
-          ))}
+          )}
+          {!loading && !error && q.trim() && results.length === 0 && (
+            <li className={styles.suggestStatus} role="option" aria-selected="false">
+              No subjects match “{q.trim()}”.
+            </li>
+          )}
+          {!loading &&
+            !error &&
+            results.map((s, i) => (
+              <li
+                key={s.slug}
+                id={`${listId}-${i}`}
+                role="option"
+                aria-selected={activeIndex === i}
+              >
+                <button
+                  type="button"
+                  className={styles.suggestItem}
+                  onClick={() => go(s)}
+                  onMouseEnter={() => setActiveIndex(i)}
+                >
+                  <span className={styles.suggestTitle}>{s.displayLabel}</span>
+                  <span className={styles.suggestMeta}>
+                    {formatSubjectMeta(
+                      s.qualifyingWorkCount || s.catalogWorkCount,
+                      s.dateMin,
+                      s.dateMax,
+                    )}
+                    {s.status === "browse_only" ? " · browse only" : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
         </ul>
       )}
     </div>

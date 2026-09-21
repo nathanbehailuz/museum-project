@@ -238,6 +238,7 @@ export async function getCatalogGraph(): Promise<{
     label: t.display_label,
     status: t.status,
     linked: linkedSlugs.has(t.slug),
+    catalogWorkCount: t.catalog_work_count,
   }));
 
   return { nodes, edges };

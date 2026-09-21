@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { ArtworkCard } from "@/lib/aic/apiTypes";
 import { formatDateDisplay } from "@/lib/formatDate";
 import ArtworkImage from "./ArtworkImage";
+import { InspectionSkeleton } from "./MuseumSkeletons";
 import styles from "./museum.module.css";
 
 type Props = {
@@ -25,6 +26,7 @@ export default function SubjectInspection({
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +45,7 @@ export default function SubjectInspection({
     return () => {
       cancelled = true;
     };
-  }, [sourceId]);
+  }, [sourceId, retryToken]);
 
   useEffect(() => {
     const previouslyFocused = returnFocusRef.current;
@@ -126,12 +128,19 @@ export default function SubjectInspection({
             </button>
           </div>
         </div>
-        {error && <p className={styles.error}>{error}</p>}
-        {!artwork && !error && (
-          <p className={styles.muted} aria-live="polite">
-            Loading artwork…
-          </p>
+        {error && (
+          <div className={styles.stateBlock}>
+            <p className={styles.error}>{error}</p>
+            <button
+              type="button"
+              className={styles.button}
+              onClick={() => setRetryToken((n) => n + 1)}
+            >
+              Retry
+            </button>
+          </div>
         )}
+        {!artwork && !error && <InspectionSkeleton />}
         {artwork && (
           <>
             <div

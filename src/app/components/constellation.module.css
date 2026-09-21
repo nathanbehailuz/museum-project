@@ -188,15 +188,39 @@
   width: 100%;
   height: calc(100vh - 12rem);
   min-height: 480px;
-  overflow: hidden;
-  touch-action: pan-x pan-y;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: color-mix(in srgb, var(--primary) 45%, transparent)
+    color-mix(in srgb, var(--surface-container) 70%, transparent);
+  scrollbar-width: thin;
+  touch-action: pan-x;
+  overscroll-behavior-inline: contain;
+}
+
+@media (max-width: 767px) {
+  .field {
+    height: calc(100vh - 14rem);
+    min-height: 320px;
+  }
+}
+
+.field::-webkit-scrollbar {
+  height: 0.5rem;
+}
+
+.field::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--surface-container) 70%, transparent);
+}
+
+.field::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 45%, transparent);
+  border-radius: 999px;
 }
 
 .scaled {
   position: relative;
   transform-origin: top left;
   transition: transform 0.25s ease;
-  margin: 0 auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -279,6 +303,17 @@
 .node:hover {
   transform: translate(-50%, -50%) scale(1.05);
   z-index: 4;
+}
+
+.node:focus-visible {
+  outline: none;
+  z-index: 5;
+}
+
+.node:focus-visible .nodeCard {
+  box-shadow:
+    0 0 0 2px var(--focus),
+    0 16px 36px rgba(0, 0, 0, 0.45);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -408,6 +443,60 @@
 .toolBtn:hover {
   background: var(--surface-container);
   color: var(--primary);
+}
+
+.toolBtn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.feedStatus {
+  position: absolute;
+  bottom: 1.25rem;
+  right: 1.5rem;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: min(22rem, calc(100% - 7rem));
+}
+
+.feedChip,
+.feedError {
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.25rem;
+  backdrop-filter: blur(8px);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.feedChip {
+  background: color-mix(in srgb, var(--surface-lowest) 92%, transparent);
+  color: var(--on-surface-variant);
+}
+
+.feedError {
+  background: color-mix(in srgb, var(--surface-lowest) 92%, transparent);
+  color: var(--error);
+}
+
+.feedRetry {
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--surface-container);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.feedRetry:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .empty {

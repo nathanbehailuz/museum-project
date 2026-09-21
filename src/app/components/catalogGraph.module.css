@@ -24,10 +24,15 @@
 
 .meta {
   margin: 0;
-  max-width: 32rem;
+  max-width: 34rem;
   font-size: 0.8rem;
   line-height: 1.45;
   color: var(--outline);
+}
+
+.meta strong {
+  color: var(--primary);
+  font-weight: 500;
 }
 
 .canvas {
@@ -60,73 +65,109 @@
   background: transparent !important;
 }
 
-.nodeDim,
-.nodeLinked {
+.node {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.18rem;
   cursor: pointer;
+  transition: opacity 0.18s ease;
 }
 
-.nodeDim {
-  opacity: 0.55;
+.nodeRest {
+  opacity: 0.45;
 }
 
 .nodeLinked {
+  opacity: 0.72;
+}
+
+.nodeFocus {
   opacity: 1;
+}
+
+.nodeNeighbor {
+  opacity: 1;
+}
+
+.nodeDimmed {
+  opacity: 0.12;
 }
 
 .icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: var(--node-size, 28px);
+  height: var(--node-size, 28px);
   border-radius: 0.3rem;
   background: var(--surface-low);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-}
-
-.nodeDim .icon {
-  border: 1px solid color-mix(in srgb, var(--outline-variant) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .nodeLinked .icon {
-  width: 32px;
-  height: 32px;
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--outline-variant));
+}
+
+.nodeFocus .icon {
   border: 1.5px solid var(--primary);
-  background: color-mix(in srgb, var(--primary) 12%, var(--surface-low));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
+  background: color-mix(in srgb, var(--primary) 18%, var(--surface-low));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent),
+    0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.nodeNeighbor .icon {
+  border: 1.25px solid color-mix(in srgb, var(--primary) 70%, transparent);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface-low));
 }
 
 .glyph {
   font-family: var(--font-display);
-  font-size: 0.9rem;
+  font-size: calc(var(--node-size, 28px) * 0.42);
   line-height: 1;
   color: var(--outline);
 }
 
-.nodeLinked .glyph {
-  font-size: 1rem;
+.nodeFocus .glyph,
+.nodeNeighbor .glyph {
   color: var(--primary);
 }
 
+.nodeLinked .glyph {
+  color: color-mix(in srgb, var(--primary) 55%, var(--outline));
+}
+
 .label {
-  max-width: 4.5rem;
+  max-width: 5.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.55rem;
+  font-size: 0.58rem;
   letter-spacing: 0.02em;
   color: var(--on-surface-variant);
   text-align: center;
 }
 
-.nodeLinked .label {
-  max-width: 5rem;
-  font-size: 0.62rem;
+.nodeFocus .label {
+  font-size: 0.68rem;
   color: var(--primary);
+}
+
+.nodeNeighbor .label {
+  color: color-mix(in srgb, var(--primary) 75%, var(--on-surface));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node,
+  .icon {
+    transition: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -136,6 +177,6 @@
   }
 
   .label {
-    max-width: 3.5rem;
+    max-width: 3.8rem;
   }
 }

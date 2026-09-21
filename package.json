@@ -14,6 +14,7 @@
     "ingest:tags": "tsx scripts/ingest/load-tag-index.ts",
     "ingest:csv": "tsx scripts/ingest/load-csv.ts",
     "ingest:csv:all": "bash scripts/ingest/run-csv-load.sh",
+    "ingest:subject": "tsx scripts/ingest/load-subject.ts",
     "ingest:rebuild-terms": "tsx scripts/ingest/rebuild-terms.ts",
     "ingest": "tsx scripts/ingest/run.ts",
     "ingest:refresh": "tsx scripts/ingest/refresh.ts",

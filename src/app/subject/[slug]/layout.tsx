@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { SubjectShellSkeleton } from "@/app/components/MuseumSkeletons";
 import SubjectShell from "@/app/components/SubjectShell";
 import styles from "@/app/components/museum.module.css";
 import {
@@ -6,7 +7,6 @@ import {
   mapTerm,
   suggestJourneyReady,
 } from "@/lib/aic/queries";
-import { enrichSubjectOnce } from "@/lib/index/enrichOnce";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SuggestionList } from "./helpers";
 
@@ -19,11 +19,6 @@ type Props = {
 
 export default async function SubjectLayout({ children, params }: Props) {
   const { slug } = await params;
-  try {
-    await enrichSubjectOnce(slug);
-  } catch (err) {
-    console.error("enrich failed", slug, err);
-  }
 
   let term;
   try {
@@ -104,15 +99,7 @@ export default async function SubjectLayout({ children, params }: Props) {
   }
 
   return (
-    <Suspense
-      fallback={
-        <main className={styles.page}>
-          <div className={styles.pageInner}>
-            <p className={styles.muted}>Loading…</p>
-          </div>
-        </main>
-      }
-    >
+    <Suspense fallback={<SubjectShellSkeleton />}>
       <SubjectShell subject={subject} epochs={epochs}>
         {children}
       </SubjectShell>

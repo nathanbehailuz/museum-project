@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import SubjectSearch from "./components/SubjectSearch";
-import HomeCatalogGraph from "./components/HomeCatalogGraph";
 import ArtworkImage from "./components/ArtworkImage";
+import HomeCatalogGraph from "./components/HomeCatalogGraph";
+import { HomePageSkeleton, SearchSkeleton } from "./components/MuseumSkeletons";
 import styles from "./components/museum.module.css";
 import {
   getArtworksByIds,
@@ -156,7 +157,7 @@ async function HomeBody() {
           Search an everyday subject to follow it through time and discover what
           surrounds it.
         </p>
-        <Suspense fallback={<p className={styles.muted}>Loading search…</p>}>
+        <Suspense fallback={<SearchSkeleton />}>
           <SubjectSearch />
         </Suspense>
       </div>
@@ -219,7 +220,7 @@ export default function HomePage() {
   return (
     <main className={styles.page}>
       <div className={`${styles.pageInner} ${styles.homePage}`}>
-        <Suspense fallback={<p className={styles.muted}>Loading…</p>}>
+        <Suspense fallback={<HomePageSkeleton />}>
           <HomeBody />
         </Suspense>
       </div>

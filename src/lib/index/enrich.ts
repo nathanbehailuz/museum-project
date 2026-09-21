@@ -235,7 +235,7 @@ function rowToNorm(r: ArtRow): NormalizedArtwork {
   };
 }
 
-async function recomputeSubject(
+export async function recomputeSubject(
   supabase: SupabaseClient,
   slug: string,
 ) {

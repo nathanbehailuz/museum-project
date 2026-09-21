@@ -38,6 +38,26 @@ export type JourneyChapter = {
   featured: ArtworkCard[];
 };
 
+export type JourneyIngestionProgress = {
+  status: "running" | "complete" | "retry_required";
+  processed: number;
+  total: number;
+  failed: number;
+  startedAt: string;
+  finishedAt: string | null;
+  error: string | null;
+};
+
+export type JourneyWorksResponse = {
+  works: ArtworkCard[];
+  page: number;
+  pageSize: number;
+  total: number;
+  catalogCount: number;
+  serverTime: string;
+  ingestion: JourneyIngestionProgress | null;
+};
+
 export type ConnectionEdgeCard = {
   targetSlug: string;
   targetLabel: string;
@@ -52,6 +72,7 @@ export type CatalogGraphNode = {
   status: TermStatus;
   /** True when this subject has at least one stored connection edge. */
   linked: boolean;
+  catalogWorkCount: number;
 };
 
 export type CatalogGraphEdge = {

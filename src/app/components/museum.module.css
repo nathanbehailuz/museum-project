@@ -130,6 +130,74 @@
   overflow: auto;
 }
 
+.suggestStatus {
+  padding: 0.75rem 0.9rem;
+  color: var(--on-surface-variant);
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.suggestStatusShimmer {
+  display: block;
+  width: 70%;
+  height: 0.85rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(
+    110deg,
+    var(--skeleton) 0%,
+    var(--skeleton-shine) 45%,
+    var(--skeleton) 90%
+  );
+  background-size: 200% 100%;
+  animation: suggestShimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes suggestShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suggestStatusShimmer {
+    animation: none;
+    background: var(--skeleton);
+  }
+}
+
+.suggestStatusError {
+  margin: 0 0 0.5rem;
+  color: var(--error);
+  font-size: 0.85rem;
+}
+
+.suggestRetry {
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.3rem 0.55rem;
+  background: var(--surface-high);
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.suggestRetry:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.stateBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
 .suggestItem {
   display: flex;
   flex-direction: column;
